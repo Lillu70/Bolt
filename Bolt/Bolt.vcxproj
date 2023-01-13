@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\Bolt\Core\Assets.h" />
+    <ClInclude Include="src\Bolt.h" />
+    <ClInclude Include="src\Bolt\Core\Application.h" />
+    <ClInclude Include="src\Bolt\Core\App_Init_Params.h" />
+    <ClInclude Include="src\Bolt\Core\Assert.h" />
+    <ClInclude Include="src\Bolt\Core\Core.h" />
+    <ClInclude Include="src\Bolt\Core\Input.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Renderer.h" />
+    <ClInclude Include="src\Bolt\Core\Time.h" />
+    <ClInclude Include="src\Bolt\Core\Timer.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Renderer_Resource_Factory.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Vk_Internal_Components.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Vk_Renderer.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Vk_Descriptor_Allocator.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Vk_Assist.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Vk_Resources.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Bolt\Core\Application.cpp" />
+    <ClCompile Include="src\Bolt\Vulkan\Vk_Renderer.cpp" />
+    <ClCompile Include="src\Bolt\Vulkan\Vk_Descriptor_Allocator.cpp" />
+    <ClCompile Include="src\Bolt\Vulkan\Vk_Assist.cpp" />
+    <ClCompile Include="src\Bolt\Vulkan\Vk_Resources.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{254f9916-8632-41aa-9b43-5d2dc9c7db06}</ProjectGuid>
+    <RootNamespace>Bolt</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Configuration)-$(Platform)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin-int\$(Configuration)-$(Platform)\$(ProjectName)\</IntDir>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(SolutionDir)bin\$(Configuration)-$(Platform)\$(ProjectName)\</OutDir>
+    <IntDir>$(SolutionDir)bin-int\$(Configuration)-$(Platform)\$(ProjectName)\</IntDir>
+    <EnableMicrosoftCodeAnalysis>false</EnableMicrosoftCodeAnalysis>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>BOLT_PLATFORM_WINDOWS;GLFW_INCLUDE_VULKAN;TINYOBJLOADER_IMPLEMENTATION;STB_IMAGE_IMPLEMENTATION;GLM_FORCE_DEPTH_ZERO_TO_ONE;GLM_FORCE_RADIANS;GLM_ENABLE_EXPERIMENTAL; BOLT_BUILD_DLL_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\src\Vendor\glfw-3.3.8.bin.WIN64\include;$(SolutionDir)$(ProjectName)\src\Vendor\VulkanSDK\1.3.224.1\Include;$(SolutionDir)$(ProjectName)\src\Vendor\glm;$(SolutionDir)$(ProjectName)\src\Vendor\Tiny_Object_Loader;$(SolutionDir)$(ProjectName)\src\Vendor\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(ProjectName)\src\Vendor\glfw-3.3.8.bin.WIN64\lib-vc2019;$(SolutionDir)$(ProjectName)\src\Vendor\VulkanSDK\1.3.224.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+    </Lib>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>BOLT_PLATFORM_WINDOWS;GLFW_INCLUDE_VULKAN;TINYOBJLOADER_IMPLEMENTATION;STB_IMAGE_IMPLEMENTATION;GLM_FORCE_DEPTH_ZERO_TO_ONE;GLM_FORCE_RADIANS;GLM_ENABLE_EXPERIMENTAL; BOLT_BUILD_DLLNDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\src\Vendor\glfw-3.3.8.bin.WIN64\include;$(SolutionDir)$(ProjectName)\src\Vendor\VulkanSDK\1.3.224.1\Include;$(SolutionDir)$(ProjectName)\src\Vendor\glm;$(SolutionDir)$(ProjectName)\src\Vendor\Tiny_Object_Loader;$(SolutionDir)$(ProjectName)\src\Vendor\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>
+      </PrecompiledHeaderFile>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Lib>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(SolutionDir)$(ProjectName)\src\Vendor\glfw-3.3.8.bin.WIN64\lib-vc2019;$(SolutionDir)$(ProjectName)\src\Vendor\VulkanSDK\1.3.224.1\Lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>true</IgnoreAllDefaultLibraries>
+    </Lib>
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="src\Bolt\Core\Core.h" />
+    <ClInclude Include="src\Bolt\Core\Application.h" />
+    <ClInclude Include="src\Bolt.h" />
+    <ClInclude Include="src\Bolt\Core\Timer.h" />
+    <ClInclude Include="src\Bolt\Core\Time.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Vk_Internal_Components.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Vk_Renderer.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Vk_Descriptor_Allocator.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Renderer.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Vk_Assist.h" />
+    <ClInclude Include="src\Bolt\Core\Assert.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Vk_Resources.h" />
+    <ClInclude Include="src\Bolt\Core\App_Init_Params.h" />
+    <ClInclude Include="src\Bolt\Core\Input.h" />
+    <ClInclude Include="src\Bolt\Core\Assets.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Renderer_Resource_Factory.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Bolt\Core\Application.cpp" />
+    <ClCompile Include="src\Bolt\Vulkan\Vk_Renderer.cpp" />
+    <ClCompile Include="src\Bolt\Vulkan\Vk_Descriptor_Allocator.cpp" />
+    <ClCompile Include="src\Bolt\Vulkan\Vk_Assist.cpp" />
+    <ClCompile Include="src\Bolt\Vulkan\Vk_Resources.cpp" />
+  </ItemGroup>
+</Project>

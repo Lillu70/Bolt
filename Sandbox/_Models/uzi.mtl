@@ -1,0 +1,16 @@
+# Blender 3.1.0 MTL File: 'None'
+# www.blender.org
+
+newmtl UZI
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd  D:\Others\Game Design Assests\Blender Folder\Blender Projects\Weapons Folder\uzi\UZI Textures\UZI Gun Texture\UZI_Base_color.png
+map_Ns  D:\Others\Game Design Assests\Blender Folder\Blender Projects\Weapons Folder\uzi\UZI Textures\UZI Gun Texture\UZI_Roughness.png
+map_refl  D:\Others\Game Design Assests\Blender Folder\Blender Projects\Weapons Folder\uzi\UZI Textures\UZI Gun Texture\UZI_Metallic.png
+map_Bump  -bm 1.000000 D:\Others\Game Design Assests\Blender Folder\Blender Projects\Weapons Folder\uzi\UZI Textures\UZI Gun Texture\UZI_Normal_OpenGL.png
