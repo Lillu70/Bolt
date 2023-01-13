@@ -19,5 +19,5 @@ private:
 	std::vector<Bolt::Render_Object> m_render_objects;
 
 	glm::vec3 m_light_direction = glm::vec3(3, 3, 3);
-	float m_light_rotation_speed = 0.5f;
+	float m_light_rotation_speed = 0.7f;
 };
