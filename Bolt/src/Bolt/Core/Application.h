@@ -1,18 +1,5 @@
 #pragma once
 
-/* Example
-
-class User_App : public Bolt::Application
-{
-protected:
-	void User_Initialize(Bolt::Init_Params& init_params) override;
-	void User_Update(Bolt::Time time_step) override;
-	void User_Render(Bolt::Renderer* renderer) override;
-	void User_App_Exit() override;
-};
-
-*/
-
 #include "../Vulkan/Vk_Renderer.h"
 #include "App_Init_Params.h"
 #include "Assets.h"
