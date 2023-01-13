@@ -21,6 +21,18 @@ Very early in developement, so the feature list is not final.
 Comes with an example client application that uses Bolt.
 It loads example models and has a camera controller (WASD and mouse, or arrow keys)
 
+[W] moves the camera Up, [S] moves the camera Down,
+
+[A] moves the camera to Left, [D] moves the camera to Right,
+
+[Left Shift + W] moves the camera to Forwards, [Left Shift + D] moves the camera to Backwards,
+
+[Up Arrow] & [Down Arrow] keys rotate the camera on the X axis.
+
+[Left Arrow] & [Right Arrow] keys rotate the camera on the Y axis.
+
+Hold down [Left Mouse Button] to rotate the camera by moving the mouse.
+
 # Screenshots
 ![BOLT_Sandbox](https://user-images.githubusercontent.com/122602146/212363027-f5bf1f86-0224-4ef2-8e06-26e9434bc2e7.png)
 
