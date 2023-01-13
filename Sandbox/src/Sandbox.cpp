@@ -5,43 +5,33 @@ void Sandbox::User_Initialize(Bolt::App_Init& init_params)
 {
 	init_params.clear_color = glm::vec3(0.01f, 0.01f, 0.01f);
 
-
-	Asset().Create_Material("gun", { 32.f }, Asset().Texture("UZI_Base_color.png"));
 	Asset().Create_Material("default", { 1000.f }, Asset().Texture("white.png"));
-	Asset().Create_Material("statue", { 1000.f }, Asset().Texture("texture.jpg"));
-
+	Asset().Create_Material("chair", { 50.f }, Asset().Texture("chair.png"));
 	
 
 	{
 		Bolt::Render_Object& render_obj = m_render_objects.emplace_back();
 
-		render_obj.mesh = Asset().Mesh("uzi.obj");
-		render_obj.material = Asset().Material("gun");
-		render_obj.transform = glm::translate(glm::mat4(1), glm::vec3(5.0f, 2.0f, -20.0f)) * glm::scale(glm::vec3(50));
+		render_obj.mesh = Asset().Mesh("chair.obj");
+		render_obj.material = Asset().Material("chair");
+		render_obj.transform = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 0.f, -10.f)) * glm::scale(glm::vec3(1));
 	}
-	
+
 	{
 		Bolt::Render_Object& render_obj = m_render_objects.emplace_back();
 
-		render_obj.mesh = Asset().Mesh("Skull.obj");
+		render_obj.mesh = Asset().Mesh("chair.obj");
+		render_obj.material = Asset().Material("chair");
+		render_obj.transform = glm::translate(glm::mat4(1.f), glm::vec3(0.f, 0.f, -20.f)) * glm::scale(glm::vec3(0.5f, 3.f, 2.f));
+	}
+
+
+	{
+		Bolt::Render_Object& render_obj = m_render_objects.emplace_back();
+
+		render_obj.mesh = Asset().Mesh("ball.obj");
 		render_obj.material = Asset().Material("default");
-		render_obj.transform = glm::translate(glm::mat4(1), glm::vec3(0.0f, 2.0f, -50.0f));
-	}
-
-	{
-		Bolt::Render_Object& render_obj = m_render_objects.emplace_back();
-
-		render_obj.mesh = Asset().Mesh("bottle.obj");
-		render_obj.material = Asset().Material("default");
-		render_obj.transform = glm::translate(glm::mat4(1), glm::vec3(2.0f, 2.0f, -30.0f));
-	}
-
-	{
-		Bolt::Render_Object& render_obj = m_render_objects.emplace_back();
-
-		render_obj.mesh = Asset().Mesh("bottle.obj");
-		render_obj.material = Asset().Material("statue");
-		render_obj.transform = glm::translate(glm::mat4(1), glm::vec3(-6.0f, 2.0f, -30.0f));
+		render_obj.transform = glm::translate(glm::mat4(1.f), glm::vec3(5.f, 0.f, -10.f)) * glm::scale(glm::vec3(1.f));
 	}
 
 	{
@@ -49,15 +39,7 @@ void Sandbox::User_Initialize(Bolt::App_Init& init_params)
 
 		render_obj.mesh = Asset().Mesh("ball.obj");
 		render_obj.material = Asset().Material("default");
-		render_obj.transform = glm::translate(glm::mat4(1), glm::vec3(-5.0f, 2.0f, -10.0f)) * glm::scale(glm::vec3(2));
-	}
-
-	{
-		Bolt::Render_Object& render_obj = m_render_objects.emplace_back();
-
-		render_obj.mesh = Asset().Mesh("ball.obj");
-		render_obj.material = Asset().Material("default");
-		render_obj.transform = glm::translate(glm::mat4(1), glm::vec3(2.0f, 2.0f, -10.0f));
+		render_obj.transform = glm::translate(glm::mat4(1.f), glm::vec3(10.f, 0.f, -10.f)) * glm::scale(glm::vec3(2.f, 2.f, 1.f));
 	}
 
 	{
@@ -65,7 +47,7 @@ void Sandbox::User_Initialize(Bolt::App_Init& init_params)
 
 		render_obj.mesh = Asset().Mesh("cube.obj");
 		render_obj.material = Asset().Material("default");
-		render_obj.transform = glm::mat4(1);
+		render_obj.transform = glm::translate(glm::mat4(1.f), glm::vec3(-5.f, 0.f, -10.f)) * glm::scale(glm::vec3(1.f));
 	}
 
 }

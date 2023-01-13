@@ -64,6 +64,7 @@ namespace Bolt
 			m_fps_accum_time--;
 			m_fps = m_fps_frame_counter;
 			m_fps_frame_counter = 0;
+			//std::cout << "FPS: " << m_fps << "\n";
 		}
 	}
 
