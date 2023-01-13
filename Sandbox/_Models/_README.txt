@@ -1,0 +1,1 @@
+This is where your model files go. Only supports the obj format, does not import materials and all shapes get flattened into one mesh.
