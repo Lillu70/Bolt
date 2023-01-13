@@ -20,6 +20,16 @@ abort();												\
 }														\
 0 + 0
 
+#ifdef _DEBUG
+#define WARN(MESSAGE)									\
+{														\
+std::cout << "\n[WARNING]: " << MESSAGE << "!\n";		\
+}														\
+0 + 0
+#else
+#define WARN(MESSAGE)
+#endif
+
 #define ERROR_NO_SUITABLE_DEVICE_MEMORY()				\
 {														\
 const char* MESSAGE = "Failed to find suitable memory";	\

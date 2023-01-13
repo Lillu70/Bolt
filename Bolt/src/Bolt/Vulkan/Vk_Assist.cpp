@@ -5,9 +5,9 @@
 #include <algorithm>
 
 #ifdef _DEBUG
-constexpr bool enable_validation_layers = true;
+bool enable_validation_layers = true;
 #else
-constexpr bool enable_validation_layers = false;
+bool enable_validation_layers = false;
 #endif
 
 const std::vector<const char*> validation_layers = { "VK_LAYER_KHRONOS_validation" };
@@ -77,6 +77,8 @@ void Bolt::Vk_Init::Create_Instance(PFN_vkDebugUtilsMessengerCallbackEXT user_ca
     create_info.pApplicationInfo = &app_info;
     create_info.enabledExtensionCount = static_cast<uint32_t>(required_extensions.size());
     create_info.ppEnabledExtensionNames = required_extensions.data();
+    create_info.enabledLayerCount = 0;
+    create_info.pNext = nullptr;
 
     if (enable_validation_layers)
     {
@@ -98,19 +100,23 @@ void Bolt::Vk_Init::Create_Instance(PFN_vkDebugUtilsMessengerCallbackEXT user_ca
                 }
 
             if (layer_missing)
-                ERROR("Validation layers requested, but not available");
+            {
+                WARN(std::string("Validation layer: ") + layer_name + " requested, but not available\n Validation layers disabled!");
+                enable_validation_layers = false;
+                break;
+            }
+                
         }
 
-        create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
-        create_info.ppEnabledLayerNames = validation_layers.data();
-        Populate_Debug_Messenger_Create_Info(debug_create_info, user_callback);
-        create_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debug_create_info;
+        if (enable_validation_layers)
+        {
+            create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+            create_info.ppEnabledLayerNames = validation_layers.data();
+            Populate_Debug_Messenger_Create_Info(debug_create_info, user_callback);
+            create_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debug_create_info;
+        } 
     }
-    else
-    {
-        create_info.enabledLayerCount = 0;
-        create_info.pNext = nullptr;
-    }
+    
 
     if (vkCreateInstance(&create_info, nullptr, &output) != VK_SUCCESS)
         ERROR("Failed to create a vulkan instance");
