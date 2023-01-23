@@ -15,7 +15,7 @@ protected:
 
 private:
 	Camera_Controller m_camera;
-
+	Bolt::Mesh triangle;
 	std::vector<Bolt::Render_Object> m_render_objects;
 
 	glm::vec3 m_light_direction = glm::vec3(3, 3, 3);

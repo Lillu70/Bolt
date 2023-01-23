@@ -39,7 +39,7 @@ namespace Bolt
 		void Create_Material(const Material_Properties& properties, const Texture& texture, Material& output_material, const std::optional<Shader> shaders = {}) override;
 		void Destroy(Material& material) override;
 
-		void Load_Mesh(const char* file_path, Mesh& output_mesh) override;
+		void Load_Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, Mesh& output_mesh) override;
 		void Destroy(Mesh& mesh) override;
 
 	private:

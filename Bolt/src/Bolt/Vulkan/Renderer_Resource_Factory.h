@@ -16,7 +16,7 @@ namespace Bolt
 		virtual void Create_Material(const Material_Properties& properties, const Texture& texture, Material& output_material, const std::optional<Shader> shaders = {}) = 0;
 		virtual void Destroy(Material& material) = 0;
 
-		virtual void Load_Mesh(const char* file_path, Mesh& output_mesh) = 0;
+		virtual void Load_Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, Mesh& output_mesh) = 0;
 		virtual void Destroy(Mesh& mesh) = 0;
 	};
 }

@@ -16,7 +16,7 @@ private:
 public:
 	float m_camera_movement_speed = 10;
 	float m_camera_key_rotation_speed = 100;
-	float m_camera_cursor_rotation_speed = 300;
+	float m_camera_cursor_rotation_speed = 0.5;
 
 private:
 	Bolt::Input& m_input;

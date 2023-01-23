@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Vulkan/Vk_Renderer.h"
+
 #include "App_Init_Params.h"
 #include "Assets.h"
 #include "Input.h"
@@ -22,6 +23,9 @@ namespace Bolt
 		Time Time_Step();
 		void Set_Global_Light_Source_Direction(glm::vec3 new_direction);
 		void Set_Viewport_Matrix(glm::mat4 new_matrix);
+
+	public: //Temporary hacks.
+		Vk_Renderer& _Renderer() { return *(m_renderer.get()); };
 
 	protected:
 		virtual void User_Initialize(App_Init& init_params) = 0;

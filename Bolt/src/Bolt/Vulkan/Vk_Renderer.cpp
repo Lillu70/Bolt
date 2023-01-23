@@ -381,17 +381,14 @@ void Bolt::Vk_Renderer::Destroy(Material& material)
 }
 
 
-void Bolt::Vk_Renderer::Load_Mesh(const char* file_path, Mesh& output_mesh)
+void Bolt::Vk_Renderer::Load_Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, Mesh& output_mesh)
 {
-	ASSERT(file_path, "File path is a nullptr!");
 	ASSERT(output_mesh.m_vertex_buffer.handle == VK_NULL_HANDLE, "Vertex buffer already created!");
 	ASSERT(output_mesh.m_vertex_buffer.memory == VK_NULL_HANDLE, "Vertex memory already allocated!");
 	ASSERT(output_mesh.m_index_buffer.handle == VK_NULL_HANDLE, "Index buffer already created!");
 	ASSERT(output_mesh.m_index_buffer.memory == VK_NULL_HANDLE, "Index memory already allocated!");
-
-	//Load the vertex and index data from an OBJ file to host memory.
-	auto [vertices, indices] = Mesh::Load_From_OBJ(file_path);
-	ASSERT(!indices.empty(), "Mesh failed to load!");
+	ASSERT(!indices.empty(), "Indices vector is empty!");
+	ASSERT(!vertices.empty(), "Vertices vector is empty!");
 
 	//Upload the vertex and index buffers into GPU memory and store handles in the mesh members.
 	Upload_Buffer_To_GPU((void*)vertices.data(), sizeof(vertices[0]) * vertices.size(), VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, output_mesh.m_vertex_buffer);

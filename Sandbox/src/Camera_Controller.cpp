@@ -67,7 +67,7 @@ void Camera_Controller::Cursor_Camera_Rotation(float time_step)
 
 	if (m_input.Get(Bolt::Key::Mouse_Left).Is_Released()) return;
 
-	glm::vec2 camera_movement = mouse_offset * m_camera_cursor_rotation_speed * time_step;
+	glm::vec2 camera_movement = mouse_offset * m_camera_cursor_rotation_speed;
 	m_yaw += camera_movement.x;
 	m_pich += -camera_movement.y;
 }

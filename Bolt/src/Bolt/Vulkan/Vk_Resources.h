@@ -57,9 +57,6 @@ namespace Bolt
 		friend Vk_Renderer;
 
 	private:
-		static std::pair<std::vector<Vertex>, std::vector<uint32_t>> Load_From_OBJ(const char* file_path);
-
-	private:
 		Buffer_Description m_vertex_buffer;
 		Buffer_Description m_index_buffer;
 		uint32_t m_index_count = 0;

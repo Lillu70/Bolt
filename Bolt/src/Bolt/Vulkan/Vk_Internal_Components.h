@@ -108,6 +108,16 @@ namespace Bolt
 
     typedef Material_Uniform_Buffer_Object Material_Properties;
 
+    struct Material_Data
+    {
+        std::string m_deffuse_texture_name;
+
+        glm::vec3 ambient_color = glm::vec3(0);
+        glm::vec3 diffuse_color = glm::vec3(0);
+        glm::vec3 specular_color = glm::vec3(0);
+        float specular_exponent = 0;
+    };
+
     struct Swapchain_Support_Details
     {
         VkSurfaceCapabilitiesKHR capabilities;
@@ -146,13 +156,13 @@ namespace Bolt
 
     struct Vertex
     {
-        glm::vec3 m_position;
-        glm::vec3 m_normal;
-        glm::vec2 m_uv;
+        glm::vec3 position;
+        glm::vec3 normal;
+        glm::vec2 uv;
 
         bool operator==(const Vertex& other) const
         {
-            return m_position == other.m_position && m_normal == other.m_normal && m_uv == other.m_uv;
+            return position == other.position && normal == other.normal && uv == other.uv;
         }
 
         static VkVertexInputBindingDescription Get_Binding_Description()
@@ -168,28 +178,33 @@ namespace Bolt
 
         static std::array<VkVertexInputAttributeDescription, 3> Get_Attribute_Descriptions()
         {
-            std::array<VkVertexInputAttributeDescription, 3> attribute_descriptions{};
+            std::array<VkVertexInputAttributeDescription, 3> attributes{};
 
-            uint32_t location = 0;
+            uint32_t i = 0;
 
-            attribute_descriptions[0].binding = 0;
-            attribute_descriptions[0].location = location++;
-            attribute_descriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-            attribute_descriptions[0].offset = offsetof(Vertex, m_position);
+            attributes[i].binding = 0;
+            attributes[i].location = i;
+            attributes[i].format = VK_FORMAT_R32G32B32_SFLOAT;
+            attributes[i].offset = offsetof(Vertex, position);
+            i++;
 
-            attribute_descriptions[1].binding = 0;
-            attribute_descriptions[1].location = location++;
-            attribute_descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-            attribute_descriptions[1].offset = offsetof(Vertex, m_normal);
+            attributes[i].binding = 0;
+            attributes[i].location = i;
+            attributes[i].format = VK_FORMAT_R32G32B32_SFLOAT;
+            attributes[i].offset = offsetof(Vertex, normal);
+            i++;
 
-            attribute_descriptions[2].binding = 0;
-            attribute_descriptions[2].location = location++;
-            attribute_descriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-            attribute_descriptions[2].offset = offsetof(Vertex, m_uv);
+            attributes[i].binding = 0;
+            attributes[i].location = i;
+            attributes[i].format = VK_FORMAT_R32G32_SFLOAT;
+            attributes[i].offset = offsetof(Vertex, uv);
+            i++;
 
-            return attribute_descriptions;
+            return attributes;
         }
     };
+
+    
 }
 
 namespace std
@@ -198,9 +213,9 @@ namespace std
     {
         size_t operator()(Bolt::Vertex const& vertex) const
         {
-            return ((hash<glm::vec3>()(vertex.m_position) ^
-                (hash<glm::vec3>()(vertex.m_normal) << 1)) >> 1) ^
-                (hash<glm::vec2>()(vertex.m_uv) << 1);
+            return ((hash<glm::vec3>()(vertex.position) ^
+                (hash<glm::vec3>()(vertex.normal) << 1)) >> 1) ^
+                (hash<glm::vec2>()(vertex.uv) << 1);
         }
     };
 }
