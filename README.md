@@ -5,15 +5,15 @@ Very early in developement, so the feature list is not final.
 
 # Features:
 
--Rendering of multiple 3D models.
+- Rendering of multiple 3D models.
 
--Specular per fragment shading from one directional light source.
+- Specular per fragment shading from one directional light source.
 
--Resource manager for client visible objects, such as meshes, textures and materials.
+- Sesource manager for client visible objects, such as meshes, textures and materials.
 
--Simple application framework. Client applications inherit the virtual Bolt::Application class and override the client interface.
+- Simple application framework. Client applications inherit the virtual Bolt::Application class and override the client interface.
 
--Window and simplefied input handling. (using GLFW https://www.glfw.org/)
+- Window and simplefied input handling. (using GLFW https://www.glfw.org/)
 
 - Partial .obj model and .mtl material loading.
 
