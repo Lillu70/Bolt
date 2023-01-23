@@ -15,7 +15,7 @@ Very early in developement, so the feature list is not final.
 
 -Window and simplefied input handling. (using GLFW https://www.glfw.org/)
 
--Partial .obj model loading. (using TinyObjLoader https://github.com/tinyobjloader/tinyobjloader)
+- Partial .obj model and .mtl material loading.
 
 # Sandbox Example App
 Comes with an example client application that uses Bolt.
