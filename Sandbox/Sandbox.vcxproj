@@ -79,7 +79,7 @@
       <PreprocessorDefinitions>BOLT_PLATFORM_WINDOWS;GLFW_INCLUDE_VULKAN;TINYOBJLOADER_IMPLEMENTATION;STB_IMAGE_IMPLEMENTATION;GLM_FORCE_DEPTH_ZERO_TO_ONE;GLM_FORCE_RADIANS;GLM_ENABLE_EXPERIMENTAL;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Bolt\src;$(SolutionDir)Bolt\src\Vendor\glfw-3.3.8.bin.WIN64\include;$(SolutionDir)Bolt\src\Vendor\VulkanSDK\1.3.224.1\Include;$(SolutionDir)Bolt\src\Vendor\glm;$(SolutionDir)Bolt\src\Vendor\Tiny_Object_Loader;$(SolutionDir)Bolt\src\Vendor\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Bolt\src;$(SolutionDir)Bolt\src\Vendor\glfw-3.3.8.bin.WIN64\include;$(SolutionDir)Bolt\src\Vendor\VulkanSDK\1.3.224.1\Include;$(SolutionDir)Bolt\src\Vendor\glm;$(SolutionDir)Bolt\src\Vendor\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>

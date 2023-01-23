@@ -118,7 +118,7 @@
       <PreprocessorDefinitions>BOLT_PLATFORM_WINDOWS;GLFW_INCLUDE_VULKAN;TINYOBJLOADER_IMPLEMENTATION;STB_IMAGE_IMPLEMENTATION;GLM_FORCE_DEPTH_ZERO_TO_ONE;GLM_FORCE_RADIANS;GLM_ENABLE_EXPERIMENTAL; BOLT_BUILD_DLLNDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\src\Vendor\glfw-3.3.8.bin.WIN64\include;$(SolutionDir)$(ProjectName)\src\Vendor\VulkanSDK\1.3.224.1\Include;$(SolutionDir)$(ProjectName)\src\Vendor\glm;$(SolutionDir)$(ProjectName)\src\Vendor\Tiny_Object_Loader;$(SolutionDir)$(ProjectName)\src\Vendor\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)$(ProjectName)\src\Vendor\glfw-3.3.8.bin.WIN64\include;$(SolutionDir)$(ProjectName)\src\Vendor\VulkanSDK\1.3.224.1\Include;$(SolutionDir)$(ProjectName)\src\Vendor\glm;$(SolutionDir)$(ProjectName)\src\Vendor\stb;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
