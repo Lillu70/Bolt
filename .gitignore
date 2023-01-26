@@ -364,3 +364,7 @@ FodyWeavers.xsd
 /bin-int/Debug-x64/Sandbox
 /bin-int/Release-x64/Sandbox
 /bin-int/Release-x64/Bolt
+
+/Sandbox/_Textures/chainsaw
+/Sandbox/_Models/chainsaw.obj
+/Sandbox/_Models/chainsaw.mtl

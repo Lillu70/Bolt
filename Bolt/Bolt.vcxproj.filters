@@ -19,6 +19,8 @@
     <ClInclude Include="src\Bolt\Vulkan\Renderer_Resource_Factory.h" />
     <ClInclude Include="src\Bolt\Core\Obj_Loader.h" />
     <ClInclude Include="src\Bolt\Core\Assets_Resource_Injector.h" />
+    <ClInclude Include="src\Bolt\Core\Layer.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Vk_Render_Objects.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Bolt\Core\Application.cpp" />
@@ -27,5 +29,7 @@
     <ClCompile Include="src\Bolt\Vulkan\Vk_Assist.cpp" />
     <ClCompile Include="src\Bolt\Vulkan\Vk_Resources.cpp" />
     <ClCompile Include="src\Bolt\Core\Obj_Loader.cpp" />
+    <ClCompile Include="src\Bolt\Core\Assets.cpp" />
+    <ClCompile Include="src\Bolt\Vulkan\Vk_Render_Objects.cpp" />
   </ItemGroup>
 </Project>

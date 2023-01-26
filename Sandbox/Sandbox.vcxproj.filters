@@ -9,4 +9,7 @@
     <ClInclude Include="src\Sandbox.h" />
     <ClInclude Include="src\Camera_Controller.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="_Shaders\Bilboard\shader.vert" />
+  </ItemGroup>
 </Project>

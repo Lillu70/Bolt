@@ -9,15 +9,15 @@ std::vector<std::pair<std::string, std::string>> Bolt::Obj_Loader::Load(const st
     
     std::vector<std::pair<std::string, std::string>> shape_names;
 
-    std::unordered_map<Vertex, uint32_t> unique_vertices;
-    std::vector<Vertex> vertices;
-    std::vector<uint32_t> indices;
+    std::unordered_map<std::string, Model_Loader::Mesh_Data> sub_meshes;
+
+    Model_Loader::Mesh_Data* active_sub_mesh = nullptr;
+    std::string active_object_name;
 
     std::vector<glm::vec3> positions;
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> texture_coord;
 
-    uint32_t sub_mesh_count = 0;
    
     std::ifstream file(Full_Path(sub_folder.c_str(), file_name.c_str(), File_Suffix()));
     if (!file.is_open())
@@ -41,20 +41,10 @@ std::vector<std::pair<std::string, std::string>> Bolt::Obj_Loader::Load(const st
         //Push recorded mesh and start recording a new mesh!
         if (word == "o")
         {
-            if (!shape_names.empty())
-            {
-                injector->Push_Mesh(shape_names.back().first, vertices, indices);
-                vertices.clear();
-                indices.clear();
-                unique_vertices.clear();
-            }
-            
-            sub_mesh_count = 0;
+            Push_Sub_Meshes(sub_meshes, shape_names, active_object_name, injector);
 
-            std::pair<std::string, std::string>& shape_name = shape_names.emplace_back();
             std::getline(file, word, '\n');
-            
-            shape_name.first = file_name + File_Suffix() + "/" + word;
+            active_object_name = file_name + File_Suffix() + "/" + word;
             continue;
         }
 
@@ -70,23 +60,8 @@ std::vector<std::pair<std::string, std::string>> Bolt::Obj_Loader::Load(const st
 
         if (word == "usemtl")
         {
-            if (!indices.empty())
-            {
-                std::string obj_name = shape_names.back().first;
-                std::string sub_mesh_name = obj_name + "_" + std::to_string(sub_mesh_count++);
-
-                injector->Push_Mesh(sub_mesh_name, vertices, indices);
-                vertices.clear();
-                indices.clear();
-                unique_vertices.clear();
-
-                shape_names.back().first = sub_mesh_name;
-                std::pair<std::string, std::string>& shape_name = shape_names.emplace_back();
-                shape_name.first = obj_name;
-            }
-
             std::getline(file, word, '\n');
-            shape_names.back().second = word;
+            active_sub_mesh = &sub_meshes[word];
             continue;
         }
             
@@ -110,7 +85,8 @@ std::vector<std::pair<std::string, std::string>> Bolt::Obj_Loader::Load(const st
 
         if (word == "f") // face
         {
-            word = Read_Faces_In_Tight_Loop(file, positions, texture_coord, normals, unique_vertices, indices, vertices);
+            ASSERT(active_sub_mesh, "Active sub mesh is a nullptr!");
+            word = Read_Faces_In_Tight_Loop(file, positions, texture_coord, normals, *active_sub_mesh);
             goto WORD_CHECKS_START;
         }
         
@@ -120,12 +96,26 @@ std::vector<std::pair<std::string, std::string>> Bolt::Obj_Loader::Load(const st
     
     file.close();
 
-    injector->Push_Mesh(shape_names.back().first, vertices, indices);
+    Push_Sub_Meshes(sub_meshes, shape_names, active_object_name, injector);
     
     return shape_names;
 }
 
-std::string Bolt::Obj_Loader::Read_Faces_In_Tight_Loop(std::ifstream& file, std::vector<glm::vec3>& positions, std::vector<glm::vec2>& texture_coord, std::vector<glm::vec3>& normals, std::unordered_map<Bolt::Vertex, uint32_t>& unique_vertices, std::vector<uint32_t>& indices, std::vector<Bolt::Vertex>& vertices)
+void Bolt::Obj_Loader::Push_Sub_Meshes(std::unordered_map<std::string, Model_Loader::Mesh_Data>& sub_meshes, std::vector<std::pair<std::string, std::string>>& shape_names, const std::string& active_object_name, Assets_Resource_Injector* injector)
+{
+    uint32_t index = 0;
+    for (auto& [material_name, sub_mesh] : sub_meshes)
+    {
+        std::pair<std::string, std::string>& mesh_and_material_name = shape_names.emplace_back();
+        mesh_and_material_name.first = active_object_name + "_" + std::to_string(index++);
+        mesh_and_material_name.second = material_name;
+
+        injector->Push_Mesh(mesh_and_material_name.first, sub_mesh.vertices, sub_mesh.indices);
+    }
+    sub_meshes.clear();
+}
+
+std::string Bolt::Obj_Loader::Read_Faces_In_Tight_Loop(std::ifstream& file, std::vector<glm::vec3>& positions, std::vector<glm::vec2>& texture_coord, std::vector<glm::vec3>& normals, Model_Loader::Mesh_Data& output_mesh)
 {
     std::string word;
 
@@ -150,16 +140,16 @@ std::string Bolt::Obj_Loader::Read_Faces_In_Tight_Loop(std::ifstream& file, std:
             vertex.uv = texture_coord[face_indecies[1]];
             vertex.normal = normals[face_indecies[2]];
 
-            auto find = unique_vertices.find(vertex);
+            auto find = output_mesh.unique_vertices.find(vertex);
 
-            if (find != unique_vertices.end())
-                indices.push_back(find->second);
+            if (find != output_mesh.unique_vertices.end())
+                output_mesh.indices.push_back(find->second);
             else
             {
-                indices.push_back((uint32_t)vertices.size());
-                vertices.push_back(vertex);
+                output_mesh.indices.push_back((uint32_t)output_mesh.vertices.size());
+                output_mesh.vertices.push_back(vertex);
 
-                unique_vertices[vertex] = indices.back();
+                output_mesh.unique_vertices[vertex] = output_mesh.indices.back();
             }
         }
 
@@ -286,24 +276,19 @@ std::string Bolt::Obj_Loader::Read_Texture_Coordinate_In_Tight_Loop(std::ifstrea
 
 void Bolt::Obj_Loader::Read_Vec3(std::ifstream& file, glm::vec3& vec3)
 {
-    std::string sfloat;
     for (uint32_t i = 0; i < 3; i++)
-    {
-        file >> sfloat;
-        vec3[i] = std::stof(sfloat);
-    }
+        file >> vec3[i];
+    
 
     file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 
-void Bolt::Obj_Loader::Read_Vec2(std::ifstream& file, glm::vec2& vec3)
+void Bolt::Obj_Loader::Read_Vec2(std::ifstream& file, glm::vec2& vec2)
 {
-    std::string sfloat;
-    for (uint32_t i = 0; i < 2; i++)
-    {
-        file >> sfloat;
-        vec3[i] = std::stof(sfloat);
-    }
+    file >> vec2[0];
+    file >> vec2[1];
+
+    vec2[1] *= -1;
 
     file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }

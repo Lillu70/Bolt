@@ -36,7 +36,9 @@ namespace Bolt
 
 			User_Update(m_time_step);
 			
-			User_Render(m_renderer.get());
+			m_renderer->Submit(m_render_submissions);
+			m_renderer->Submit(m_render_submissions_billboard);
+
 			m_renderer->Draw_Frame(m_clear_color);
 
 			Update_Time_Step(frame_timer.Get_Time().As_Seconds());
@@ -50,6 +52,9 @@ namespace Bolt
 	{
 		m_clear_color = init_params.clear_color;
 		glfwSetWindowSize(m_window, (int32_t)init_params.window_dimensions.x, (int32_t)init_params.window_dimensions.y);
+		
+		m_window_title = init_params.window_title;
+		glfwSetWindowTitle(m_window, init_params.window_title.c_str());
 	}
 
 
@@ -64,7 +69,9 @@ namespace Bolt
 			m_fps_accum_time--;
 			m_fps = m_fps_frame_counter;
 			m_fps_frame_counter = 0;
-			//std::cout << "FPS: " << m_fps << "\n";
+
+			std::string title = m_window_title + " -- FPS: " + std::to_string(m_fps);
+			glfwSetWindowTitle(m_window, title.c_str());
 		}
 	}
 

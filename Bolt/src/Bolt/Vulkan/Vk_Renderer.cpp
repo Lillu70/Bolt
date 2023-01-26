@@ -39,18 +39,11 @@ void Bolt::Vk_Renderer::Init()
 	Vk_Init::Create_Swapchain(m_device, m_gpu, m_surface, m_window, m_swapchain);
 	Vk_Init::Create_Depth_Resources(m_device, m_gpu, m_swapchain, m_command_pools, m_device_queues, m_depth_image);
 	Vk_Init::Create_Framebuffer(m_device, m_render_pass, m_depth_image, m_swapchain);
-
+	
 	m_descriptors.Init(m_device, MAX_FRAMES_IN_FLIGHT);
-
-	Create_Graphics_Pipeline_Layout();
-
+	Create_Graphics_Pipeline_Layout({ m_descriptors.Get_Scene_Descriptor_Layout(), m_descriptors.Get_Material_Descriptor_Layout() });
 	Init_Per_Frame_Data();
-
-	//Load default resources.
-	Load_Shader("_Shaders/frag.spv", "_Shaders/vert.spv", m_default_shader);
-
-	//View and projection matrix initialization.
-	m_view = glm::mat4(1);
+	Create_Default_Resources();
 	Calculate_Projection_Matrix();
 }
 
@@ -79,7 +72,7 @@ void Bolt::Vk_Renderer::Dest()
 	//Cleanup after the GPU returns idle.
 
 	//Cleanup default resources.
-	Destroy(m_default_shader);
+	Destory_Default_Resources();
 
 	vkDestroyPipelineLayout(m_device, m_pipeline_layout, nullptr);
 
@@ -110,15 +103,14 @@ void Bolt::Vk_Renderer::Dest()
 
 void Bolt::Vk_Renderer::Draw_Frame(glm::vec3 clear_color)
 {
+	Scoped_Clear_Renderer_Submissions scoped_clear(m_submissions);
+
 	Frame_Data& frame = m_frame_data[m_current_frame];
 
 	vkWaitForFences(m_device, 1, &frame.sync.render_fence, VK_TRUE, UINT64_MAX);
 
 	if (Acquire_Image_From_Swapchain(frame) == false)
-	{
-		m_submissions.clear();
 		return;
-	}
 
 	//Only reset the fence if we are submitting work.
 	vkResetFences(m_device, 1, &frame.sync.render_fence);
@@ -137,13 +129,45 @@ void Bolt::Vk_Renderer::Draw_Frame(glm::vec3 clear_color)
 	Vk_Util::CMD_Set_Scissors(cmd_buffer, m_swapchain);
 
 	//Bind per frame descriptor.
-	VkPipelineBindPoint bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	vkCmdBindDescriptorSets(cmd_buffer, bind_point, m_pipeline_layout, 0, 1, &frame.camera_descriptor, 0, nullptr);
+	vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &frame.camera_descriptor, 0, nullptr);
 
+
+	//Pass in the different types of render obejcts:
+	for(auto& render_set : m_submissions.m_models_3D)
+		Draw_Model_3D(render_set, cmd_buffer);
+
+	for (auto& render_set : m_submissions.m_billboards)
+		Draw_Billboard(render_set, cmd_buffer);
+
+	//--- All the render objects have been processed.
+
+
+	vkCmdEndRenderPass(cmd_buffer);
+	if (vkEndCommandBuffer(cmd_buffer) != VK_SUCCESS)
+		ERROR("failed to record command buffer!");
+	// ----  Rendering Work Ends Here  ---- //
+
+	Submit_Graphics_Queue(frame);
+	Present_To_Surface(frame);
+
+	m_current_frame = (m_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+
+void Bolt::Vk_Renderer::Draw_Model_3D(const std::vector<Render_Object_3D_Model>* render_set, VkCommandBuffer& cmd_buffer)
+{
 	Material* active_material = nullptr;
 	Mesh* active_mesh = nullptr;
-	for (Render_Object render_obj : m_submissions)
+
+	for (const Render_Object_3D_Model& render_obj : *render_set)
 	{
+		ASSERT(render_obj.mesh, "Mesh is a nullptr!");
+		ASSERT(render_obj.mesh->m_vertex_buffer.handle, "Mesh vertex buffer handle is a nullptr!");
+		ASSERT(render_obj.mesh->m_vertex_buffer.memory, "Mesh vertex buffer memory is a nullptr!");
+		ASSERT(render_obj.mesh->m_index_buffer.handle, "Mesh index buffer handle is a nullptr!");
+		ASSERT(render_obj.mesh->m_index_buffer.memory, "Mesh index buffer memory is a nullptr!");
+		ASSERT(render_obj.mesh->m_index_count, "Index buffer count is 0!");
+
 		//Bind pipeline if different.
 		if (render_obj.material != active_material)
 		{
@@ -151,7 +175,7 @@ void Bolt::Vk_Renderer::Draw_Frame(glm::vec3 clear_color)
 			vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, active_material->m_pipeline);
 
 			//Bind per material descriptor.
-			vkCmdBindDescriptorSets(cmd_buffer, bind_point, m_pipeline_layout, 1, 1, &active_material->m_descriptor_set, 0, nullptr);
+			vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, &active_material->m_descriptor_set, 0, nullptr);
 		}
 
 		//Bind vertex/index buffers if different.
@@ -163,51 +187,63 @@ void Bolt::Vk_Renderer::Draw_Frame(glm::vec3 clear_color)
 			vkCmdBindIndexBuffer(cmd_buffer, active_mesh->m_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
 		}
 
-		Push_Constant pc = Create_Push_Constant(render_obj.transform);
+		Push_Constant pc = Create_Push_Constant_3D_Model(render_obj.transform);
 		vkCmdPushConstants(cmd_buffer, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Bolt::Push_Constant), &pc);
 
 		vkCmdDrawIndexed(cmd_buffer, active_mesh->m_index_count, 1, 0, 0, 0);
 	}
+}
 
-	vkCmdEndRenderPass(cmd_buffer);
-	if (vkEndCommandBuffer(cmd_buffer) != VK_SUCCESS)
-		ERROR("failed to record command buffer!");
-	// ----  Rendering Work Ends Here  ---- //
+void Bolt::Vk_Renderer::Draw_Billboard(const std::vector<Render_Object_Billboard>* render_set, VkCommandBuffer& cmd_buffer)
+{
+	Material* active_material = nullptr;
+	Mesh* active_mesh = nullptr;
 
-	Submit_Graphics_Queue(frame);
-	Present_To_Surface(frame);
+	for (const Render_Object_Billboard& render_obj : *render_set)
+	{
+		ASSERT(render_obj.mesh, "Mesh is a nullptr!");
+		ASSERT(render_obj.mesh->m_vertex_buffer.handle, "Mesh vertex buffer handle is a nullptr!");
+		ASSERT(render_obj.mesh->m_vertex_buffer.memory, "Mesh vertex buffer memory is a nullptr!");
+		ASSERT(render_obj.mesh->m_index_buffer.handle, "Mesh index buffer handle is a nullptr!");
+		ASSERT(render_obj.mesh->m_index_buffer.memory, "Mesh index buffer memory is a nullptr!");
+		ASSERT(render_obj.mesh->m_index_count, "Index buffer count is 0!");
 
-	m_current_frame = (m_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+		//Bind pipeline if different.
+		if (render_obj.material != active_material)
+		{
+			active_material = render_obj.material;
+			vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, active_material->m_pipeline);
 
-	m_submissions.clear();
+			//Bind per material descriptor.
+			vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, &active_material->m_descriptor_set, 0, nullptr);
+		}
+
+		//Bind vertex/index buffers if different.
+		if (render_obj.mesh != active_mesh)
+		{
+			active_mesh = render_obj.mesh;
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &active_mesh->m_vertex_buffer.handle, offsets);
+			vkCmdBindIndexBuffer(cmd_buffer, active_mesh->m_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
+		}
+
+		Push_Constant pc = Create_Push_Constant_Billboard(render_obj.position, render_obj.scale);
+		vkCmdPushConstants(cmd_buffer, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Bolt::Push_Constant), &pc);
+
+		vkCmdDrawIndexed(cmd_buffer, active_mesh->m_index_count, 1, 0, 0, 0);
+	}
 }
 
 
-void Bolt::Vk_Renderer::Submit_3D_Model(Mesh* mesh, Material* material, glm::mat4 transform)
+void Bolt::Vk_Renderer::Submit(const std::vector<Render_Object_3D_Model>& render_objects)
 {
-	Render_Object render_object;
-	render_object.mesh = mesh;
-	render_object.material = material;
-	render_object.transform = transform;
-
-	Submit_3D_Model(render_object);
+	m_submissions.m_models_3D.push_back(&render_objects);
 }
 
 
-void Bolt::Vk_Renderer::Submit_3D_Model(Render_Object& render_obj)
+void Bolt::Vk_Renderer::Submit(const std::vector<Render_Object_Billboard>& render_objects)
 {
-	ASSERT(render_obj.mesh, "Mesh is a nullptr!");
-	ASSERT(render_obj.mesh->m_vertex_buffer.handle, "Mesh vertex buffer handle is a nullptr!");
-	ASSERT(render_obj.mesh->m_vertex_buffer.memory, "Mesh vertex buffer memory is a nullptr!");
-	ASSERT(render_obj.mesh->m_index_buffer.handle, "Mesh index buffer handle is a nullptr!");
-	ASSERT(render_obj.mesh->m_index_buffer.memory, "Mesh index buffer memory is a nullptr!");
-	ASSERT(render_obj.mesh->m_index_count, "Index buffer count is 0!");
-
-	ASSERT(render_obj.material, "Material is a nullptr!");
-	ASSERT(render_obj.material->m_descriptor_set, "Descriptor set is a nullptr!");
-	ASSERT(render_obj.material->m_pipeline, "Material pipeline is a nullptr!");
-
-	m_submissions.push_back(render_obj);
+	m_submissions.m_billboards.push_back(&render_objects);
 }
 
 
@@ -295,27 +331,27 @@ void Bolt::Vk_Renderer::Destroy(Texture& texture)
 }
 
 
-void Bolt::Vk_Renderer::Load_Shader(const char* frag_file_path, const char* vert_file_path, Shader& output_shader)
+void Bolt::Vk_Renderer::Load_Shader(const char* frag_file_path, const char* vert_file_path, Raw_Shader& output_shader)
 {
 	ASSERT(frag_file_path, "File path is a nullptr!");
 	ASSERT(vert_file_path, "File path is a nullptr!");
 	ASSERT(output_shader.m_shader_modules.frag == VK_NULL_HANDLE, "Fragment shader already created!");
 	ASSERT(output_shader.m_shader_modules.vert == VK_NULL_HANDLE, "Fragment shader already created!");
 
-	auto frag_byte_code = Shader::Read_Byte_Code(frag_file_path);
-	auto vert_byte_code = Shader::Read_Byte_Code(vert_file_path);
+	auto frag_byte_code = Raw_Shader::Read_Byte_Code(frag_file_path);
+	auto vert_byte_code = Raw_Shader::Read_Byte_Code(vert_file_path);
 
 	output_shader.m_shader_modules = { Create_Shader_Module(frag_byte_code), Create_Shader_Module(vert_byte_code) };
 }
 
 
-void Bolt::Vk_Renderer::Destroy(Shader& shader)
+void Bolt::Vk_Renderer::Destroy(Raw_Shader& shader)
 {
 	Vk_Dest::Clear_Shader_Modules(m_device, shader.m_shader_modules);
 }
 
 
-void Bolt::Vk_Renderer::Create_Material(const Material_Properties& properties, const Texture& texture, Material& output_material, const std::optional<Shader> shaders)
+void Bolt::Vk_Renderer::Create_Material(const Material_Properties& properties, const Texture& texture, Material& output_material, const Shader shader)
 {
 	ASSERT(output_material.m_pipeline == VK_NULL_HANDLE, "Pipeline already created!");
 	ASSERT(output_material.m_material_buffer.handle == VK_NULL_HANDLE, "Material buffer already created!");
@@ -366,8 +402,8 @@ void Bolt::Vk_Renderer::Create_Material(const Material_Properties& properties, c
 
 	vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 
-	Shader_Modules shader = (shaders.has_value()) ? shaders.value().m_shader_modules : m_default_shader.m_shader_modules;
-	Vk_Init::Create_Graphics_Pipeline(m_device, m_pipeline_layout, m_render_pass, shader, output_material.m_pipeline);
+	Raw_Shader* raw_shader = Extract_Raw_Shader(shader);
+	Vk_Init::Create_Graphics_Pipeline(m_device, m_pipeline_layout, m_render_pass, raw_shader->m_shader_modules, output_material.m_pipeline);
 }
 
 
@@ -404,14 +440,60 @@ void Bolt::Vk_Renderer::Destroy(Mesh& mesh)
 	Vk_Dest::Clear_Buffer(m_device, mesh.m_vertex_buffer);
 }
 
+void Bolt::Vk_Renderer::Create_Default_Resources()
+{
+	Load_Shader("_Shaders/frag.spv", "_Shaders/vert.spv", m_default_shader);
+	Load_Shader("_Shaders/billboard/frag.spv", "_Shaders/billboard/vert.spv", m_default_billboard_shader);
+}
 
-Bolt::Push_Constant Bolt::Vk_Renderer::Create_Push_Constant(glm::mat4 model_transform)
+
+void Bolt::Vk_Renderer::Destory_Default_Resources()
+{
+	Destroy(m_default_shader);
+	Destroy(m_default_billboard_shader);
+}
+
+
+Bolt::Raw_Shader* Bolt::Vk_Renderer::Extract_Raw_Shader(const Shader shader)
+{
+	if (shader.custom) return shader.custom;
+
+	switch (shader._default)
+	{
+	case Shader::Defaults::Specular:
+		return &m_default_shader;
+
+	case Shader::Defaults::Billboard:
+		return &m_default_billboard_shader;
+
+	default:
+		ERROR("Unhandeled default!");
+	}
+}
+
+
+Bolt::Push_Constant Bolt::Vk_Renderer::Create_Push_Constant_3D_Model(const glm::mat4& model_transform)
 {
 	Push_Constant pc;
 
 	pc.model_matrix = model_transform;
+	//pc.model_matrix[0] = glm::vec4(glm::vec3(1), 1);
+	
 	glm::mat3 normal_matrix = glm::mat3(1);
 	normal_matrix = glm::inverseTranspose(model_transform);
+	pc.normal_matrix = normal_matrix;
+
+	return pc;
+}
+
+
+Bolt::Push_Constant Bolt::Vk_Renderer::Create_Push_Constant_Billboard(const glm::vec3& position, const glm::vec2& scale)
+{
+	Push_Constant pc;
+	pc.model_matrix[0] = glm::vec4(position, 1);
+
+	glm::mat3 normal_matrix = glm::mat3(1);
+	//normal_matrix = glm::inverseTranspose(model_transform);
 	pc.normal_matrix = normal_matrix;
 
 	return pc;
@@ -431,6 +513,8 @@ void Bolt::Vk_Renderer::Upload_Buffer_To_GPU(void* source, VkDeviceSize size, Vk
 
 VkShaderModule Bolt::Vk_Renderer::Create_Shader_Module(const std::vector<char>& code)
 {
+	ASSERT(!code.empty(), "Shader code is empty");
+
 	VkShaderModuleCreateInfo create_info{};
 	create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	create_info.codeSize = code.size();
@@ -444,14 +528,12 @@ VkShaderModule Bolt::Vk_Renderer::Create_Shader_Module(const std::vector<char>& 
 }
 
 
-void Bolt::Vk_Renderer::Create_Graphics_Pipeline_Layout()
+void Bolt::Vk_Renderer::Create_Graphics_Pipeline_Layout(std::vector<VkDescriptorSetLayout> layouts)
 {
 	VkPushConstantRange push_constant;
 	push_constant.offset = 0;
 	push_constant.size = sizeof(Bolt::Push_Constant);
 	push_constant.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-
-	std::vector<VkDescriptorSetLayout> layouts = { m_descriptors.Get_Scene_Descriptor_Layout(), m_descriptors.Get_Material_Descriptor_Layout() };
 
 	Vk_Init::Create_Graphics_Pipline_Layout(m_device, layouts, m_pipeline_layout, push_constant);
 }

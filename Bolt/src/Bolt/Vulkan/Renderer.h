@@ -6,7 +6,7 @@ namespace Bolt
 	class Renderer 
 	{
 	public:
-		virtual void Submit_3D_Model(Mesh* mesh, Material* material, glm::mat4 transform) = 0;
-		virtual void Submit_3D_Model(Render_Object& render_obj) = 0;
+		virtual void Submit(const std::vector<Render_Object_3D_Model>& render_objects) = 0;
+		virtual void Submit(const std::vector<Render_Object_Billboard>& render_objects) = 0;
 	};
 }

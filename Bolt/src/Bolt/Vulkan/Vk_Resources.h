@@ -3,13 +3,12 @@
 #include "Vk_Internal_Components.h"
 
 
-
 namespace Bolt
 {
 	class Vk_Renderer;
 
 
-	struct Shader
+	struct Raw_Shader
 	{
 		friend Vk_Renderer;
 
@@ -19,6 +18,41 @@ namespace Bolt
 	private:
 		Shader_Modules m_shader_modules;
 	};
+
+	struct Shader
+	{
+		friend Vk_Renderer;
+
+		enum class Defaults : uint8_t
+		{
+			Specular,
+			Billboard,
+		};
+
+		Shader() = default;
+
+		Shader(Shader::Defaults default_shader) : _default(default_shader), custom(nullptr){}
+		Shader(Raw_Shader* shader) : custom(shader) {}
+
+		void Set_To_Default(Shader::Defaults default_shader)
+		{
+			_default = default_shader;
+			custom = nullptr;
+		}
+
+		void Set_To_Custom(Raw_Shader* shader)
+		{
+			custom = shader;
+		}
+
+	private:
+		Shader::Defaults _default = Shader::Defaults::Specular;
+		Raw_Shader* custom = nullptr;
+	};
+
+#define SHADER_DEF_SPECULAR Bolt::Shader::Defaults::Specular
+#define SHADER_DEF_BILLBOARD Bolt::Shader::Defaults::Billboard
+
 
 	struct Image_Data
 	{
@@ -60,16 +94,6 @@ namespace Bolt
 		Buffer_Description m_vertex_buffer;
 		Buffer_Description m_index_buffer;
 		uint32_t m_index_count = 0;
-	};
-
-	struct Render_Object
-	{
-		Render_Object() = default;
-		Render_Object(Mesh* mesh, Material* material, glm::mat4 transform) : mesh(mesh), material(material), transform(transform) {}
-
-		Mesh* mesh = nullptr;
-		Material* material = nullptr;
-		glm::mat4 transform = glm::mat4(0);
 	};
 
 	struct Enviroment_Data

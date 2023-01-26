@@ -11,6 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Bolt\Core\Layer.h" />
     <ClInclude Include="src\Bolt\Core\Assets_Resource_Injector.h" />
     <ClInclude Include="src\Bolt\Core\Obj_Loader.h" />
     <ClInclude Include="src\Bolt\Core\Assets.h" />
@@ -28,14 +29,17 @@
     <ClInclude Include="src\Bolt\Vulkan\Vk_Renderer.h" />
     <ClInclude Include="src\Bolt\Vulkan\Vk_Descriptor_Allocator.h" />
     <ClInclude Include="src\Bolt\Vulkan\Vk_Assist.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Vk_Render_Objects.h" />
     <ClInclude Include="src\Bolt\Vulkan\Vk_Resources.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Bolt\Core\Assets.cpp" />
     <ClCompile Include="src\Bolt\Core\Obj_Loader.cpp" />
     <ClCompile Include="src\Bolt\Core\Application.cpp" />
     <ClCompile Include="src\Bolt\Vulkan\Vk_Renderer.cpp" />
     <ClCompile Include="src\Bolt\Vulkan\Vk_Descriptor_Allocator.cpp" />
     <ClCompile Include="src\Bolt\Vulkan\Vk_Assist.cpp" />
+    <ClCompile Include="src\Bolt\Vulkan\Vk_Render_Objects.cpp" />
     <ClCompile Include="src\Bolt\Vulkan\Vk_Resources.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

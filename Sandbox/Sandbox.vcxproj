@@ -105,6 +105,9 @@
     <ClInclude Include="src\Camera_Controller.h" />
     <ClInclude Include="src\Sandbox.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="_Shaders\Bilboard\shader.vert" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -5,7 +5,7 @@
 #include <fstream>
 
 
-std::vector<char> Bolt::Shader::Read_Byte_Code(const std::string& file_name)
+std::vector<char> Bolt::Raw_Shader::Read_Byte_Code(const std::string& file_name)
 {
     std::ifstream file(file_name, std::ios::ate | std::ios::binary);
 
