@@ -104,6 +104,8 @@ namespace Bolt
     struct Material_Uniform_Buffer_Object
     {
         float roughness = 32.f;
+        alignas(16) glm::vec3 diffuse_color = glm::vec3(1);
+        alignas(16) glm::vec3 specular_color = glm::vec3(1);
     };
 
     typedef Material_Uniform_Buffer_Object Material_Properties;

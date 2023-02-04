@@ -210,6 +210,13 @@ void Bolt::Obj_Loader::Load_mtl(const std::string& model_name, const std::string
             continue;
         }
 
+        //Diffuse color
+        if (word == "Kd")
+        {
+            Read_Vec3(file, material_data.diffuse_color);
+            continue;
+        }
+
         //Specular exponent
         if (word == "Ns")
         {
@@ -278,8 +285,7 @@ void Bolt::Obj_Loader::Read_Vec3(std::ifstream& file, glm::vec3& vec3)
 {
     for (uint32_t i = 0; i < 3; i++)
         file >> vec3[i];
-    
-
+ 
     file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 }
 

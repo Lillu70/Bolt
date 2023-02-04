@@ -12,9 +12,6 @@ protected:
 	void User_Initialize(Bolt::App_Init& init_params) override;
 	void User_Update(Bolt::Time time_step) override;
 
-	void Spawn_Billboard();
-	void Spawn_Model_3D();
-
 private:
 	Camera_Controller m_camera;
 	

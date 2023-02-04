@@ -10,7 +10,12 @@ layout(binding = 0) uniform UniformBufferObject {
 
 layout(set = 1, binding = 0) uniform sampler2D texSampler;
 
-layout(set = 1, binding = 1) uniform MaterialUniformBufferObject { float roughness; } mat_ub;
+layout(set = 1, binding = 1) uniform MaterialUniformBufferObject 
+{ 
+	float roughness; 
+	vec3 diffuse_color;
+	vec3 specular_color;
+} mat_ub;
 
 
 layout(location = 0) in vec3 fragWorldPosition;
@@ -22,5 +27,5 @@ layout(location = 0) out vec4 outColor;
 void main()
 {
 	vec3 base_color =  texture(texSampler, fragTexCoord).rgb;
-	outColor = vec4(base_color, 1.0);
+	outColor = vec4(mat_ub.diffuse_color * base_color, 1.0);
 }

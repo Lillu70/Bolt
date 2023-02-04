@@ -100,10 +100,12 @@
     <ClCompile Include="src\Camera_Controller.cpp" />
     <ClCompile Include="src\Sandbox.cpp" />
     <ClCompile Include="src\SandboxApp.cpp" />
+    <ClCompile Include="src\Test_Layer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Camera_Controller.h" />
     <ClInclude Include="src\Sandbox.h" />
+    <ClInclude Include="src\Test_Layer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="_Shaders\Bilboard\shader.vert" />

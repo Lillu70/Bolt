@@ -10,7 +10,12 @@ layout(binding = 0) uniform UniformBufferObject {
 
 layout(set = 1, binding = 0) uniform sampler2D texSampler;
 
-layout(set = 1, binding = 1) uniform MaterialUniformBufferObject { float roughness; } mat_ub;
+layout(set = 1, binding = 1) uniform MaterialUniformBufferObject 
+{ 
+	float roughness; 
+	vec3 diffuse_color;
+	vec3 specular_color;
+} mat_ub;
 
 
 layout(location = 0) in vec3 fragWorldPosition;
@@ -22,7 +27,6 @@ layout(location = 0) out vec4 outColor;
 void main()
 {
 	float light_intensity = max(dot(normalize(fragWorldNormal), normalize(ub.light_direction)), 0);
-	vec3 fragColor = light_intensity * ub.light_color;
 	vec3 deffuse_light = light_intensity * ub.light_color;
 
 	vec3 camera_position = ub.inverse_view[3].xyz;
@@ -33,9 +37,10 @@ void main()
 	blinn_term = clamp(blinn_term, 0, 1);
 	blinn_term = pow(blinn_term, mat_ub.roughness);
 
-	vec3 specular_light = ub.light_color.xyz * blinn_term;
+	//vec3 specular_light = ub.light_color.xyz * blinn_term;
+	vec3 specular_light = specular_color * ub.light_color.xyz * blinn_term;
 
-	vec3 base_color =  texture(texSampler, fragTexCoord).rgb;
+	vec3 base_color = mat_ub.diffuse_color * texture(texSampler, fragTexCoord).rgb;
 
-	outColor = vec4(ub.ambient_color * base_color + base_color * deffuse_light * fragColor + specular_light, 1.0);
+	outColor = vec4(ub.ambient_color * base_color + base_color * deffuse_light + specular_light, 1.0);
 }

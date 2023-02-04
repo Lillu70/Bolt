@@ -17,7 +17,7 @@ namespace Bolt
 		Assets(Resource_Factory* renderer_resource_factory) : m_renderer_resource_factory(renderer_resource_factory) {}
 		~Assets();
 		
-		std::vector<std::pair<std::string, std::string>>& Load_Model_File(const char* file_path, Bolt::Shader shader = {});
+		std::vector<std::pair<std::string, std::string>>& Load_Model_File(const std::string& file_path, Bolt::Shader shader = {});
 
 		Raw_Shader* Shader(const std::string& name);
 
@@ -36,7 +36,7 @@ namespace Bolt
 	private:
 		void Push_Mesh(const std::string& name, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices) override;
 	
-		void Push_Material(const std::string& model_name, const std::string material_name, Material_Data& material_data) override;
+		void Push_Material(const std::string& model_name, const std::string& material_name, Material_Data& material_data) override;
 		
 
 	private:
@@ -48,9 +48,9 @@ namespace Bolt
 		std::string m_texture_path_prefix = "_Textures/";
 		std::string m_shader_path_prefix = "_Shaders/";
 
-		std::unordered_map<std::string, Bolt::Mesh>		m_mesh_map;
-		std::unordered_map<std::string, Bolt::Material> m_material_map;
-		std::unordered_map<std::string, Bolt::Texture>	m_texture_map;
+		std::unordered_map<std::string, Bolt::Mesh>			m_mesh_map;
+		std::unordered_map<std::string, Bolt::Material>		m_material_map;
+		std::unordered_map<std::string, Bolt::Texture>		m_texture_map;
 		std::unordered_map<std::string, Bolt::Raw_Shader>	m_shader_map;
 		std::unordered_map<std::string, std::vector<std::pair<std::string, std::string>>> m_model_map;
 	};

@@ -11,8 +11,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Bolt\Core\Build_In_Components.h" />
     <ClInclude Include="src\Bolt\Core\Layer.h" />
     <ClInclude Include="src\Bolt\Core\Assets_Resource_Injector.h" />
+    <ClInclude Include="src\Bolt\Core\Component_System.h" />
     <ClInclude Include="src\Bolt\Core\Obj_Loader.h" />
     <ClInclude Include="src\Bolt\Core\Assets.h" />
     <ClInclude Include="src\Bolt.h" />
@@ -21,7 +23,6 @@
     <ClInclude Include="src\Bolt\Core\Assert.h" />
     <ClInclude Include="src\Bolt\Core\Core.h" />
     <ClInclude Include="src\Bolt\Core\Input.h" />
-    <ClInclude Include="src\Bolt\Vulkan\Renderer.h" />
     <ClInclude Include="src\Bolt\Core\Time.h" />
     <ClInclude Include="src\Bolt\Core\Timer.h" />
     <ClInclude Include="src\Bolt\Vulkan\Renderer_Resource_Factory.h" />
@@ -33,6 +34,7 @@
     <ClInclude Include="src\Bolt\Vulkan\Vk_Resources.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Bolt\Core\Layer.cpp" />
     <ClCompile Include="src\Bolt\Core\Assets.cpp" />
     <ClCompile Include="src\Bolt\Core\Obj_Loader.cpp" />
     <ClCompile Include="src\Bolt\Core\Application.cpp" />

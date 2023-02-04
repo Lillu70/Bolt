@@ -103,14 +103,15 @@ void Bolt::Vk_Renderer::Dest()
 
 void Bolt::Vk_Renderer::Draw_Frame(glm::vec3 clear_color)
 {
-	Scoped_Clear_Renderer_Submissions scoped_clear(m_submissions);
-
 	Frame_Data& frame = m_frame_data[m_current_frame];
 
 	vkWaitForFences(m_device, 1, &frame.sync.render_fence, VK_TRUE, UINT64_MAX);
 
 	if (Acquire_Image_From_Swapchain(frame) == false)
+	{
+		m_submissions.clear();
 		return;
+	}
 
 	//Only reset the fence if we are submitting work.
 	vkResetFences(m_device, 1, &frame.sync.render_fence);
@@ -131,16 +132,8 @@ void Bolt::Vk_Renderer::Draw_Frame(glm::vec3 clear_color)
 	//Bind per frame descriptor.
 	vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &frame.camera_descriptor, 0, nullptr);
 
-
-	//Pass in the different types of render obejcts:
-	for(auto& render_set : m_submissions.m_models_3D)
-		Draw_Model_3D(render_set, cmd_buffer);
-
-	for (auto& render_set : m_submissions.m_billboards)
-		Draw_Billboard(render_set, cmd_buffer);
-
-	//--- All the render objects have been processed.
-
+	//The actual draw calls!
+	Draw_Submissions(cmd_buffer);
 
 	vkCmdEndRenderPass(cmd_buffer);
 	if (vkEndCommandBuffer(cmd_buffer) != VK_SUCCESS)
@@ -151,8 +144,19 @@ void Bolt::Vk_Renderer::Draw_Frame(glm::vec3 clear_color)
 	Present_To_Surface(frame);
 
 	m_current_frame = (m_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
+
+	m_submissions.clear();
 }
 
+
+void Bolt::Vk_Renderer::Draw_Submissions(VkCommandBuffer& cmd_buffer)
+{
+	for (const Render_Submission* submission : m_submissions)
+	{
+		Draw_Model_3D(&submission->m_models_3D, cmd_buffer);
+		Draw_Billboard(&submission->m_billboards, cmd_buffer);
+	}
+}
 
 void Bolt::Vk_Renderer::Draw_Model_3D(const std::vector<Render_Object_3D_Model>* render_set, VkCommandBuffer& cmd_buffer)
 {
@@ -187,7 +191,7 @@ void Bolt::Vk_Renderer::Draw_Model_3D(const std::vector<Render_Object_3D_Model>*
 			vkCmdBindIndexBuffer(cmd_buffer, active_mesh->m_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
 		}
 
-		Push_Constant pc = Create_Push_Constant_3D_Model(render_obj.transform);
+		Push_Constant pc = Create_Push_Constant_3D_Model(*render_obj.transform);
 		vkCmdPushConstants(cmd_buffer, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Bolt::Push_Constant), &pc);
 
 		vkCmdDrawIndexed(cmd_buffer, active_mesh->m_index_count, 1, 0, 0, 0);
@@ -235,15 +239,9 @@ void Bolt::Vk_Renderer::Draw_Billboard(const std::vector<Render_Object_Billboard
 }
 
 
-void Bolt::Vk_Renderer::Submit(const std::vector<Render_Object_3D_Model>& render_objects)
+void Bolt::Vk_Renderer::Submit(const Render_Submission& submissions)
 {
-	m_submissions.m_models_3D.push_back(&render_objects);
-}
-
-
-void Bolt::Vk_Renderer::Submit(const std::vector<Render_Object_Billboard>& render_objects)
-{
-	m_submissions.m_billboards.push_back(&render_objects);
+	m_submissions.push_back(&submissions);
 }
 
 
@@ -491,6 +489,7 @@ Bolt::Push_Constant Bolt::Vk_Renderer::Create_Push_Constant_Billboard(const glm:
 {
 	Push_Constant pc;
 	pc.model_matrix[0] = glm::vec4(position, 1);
+	pc.model_matrix[1] = glm::vec4(scale, 1, 1);
 
 	glm::mat3 normal_matrix = glm::mat3(1);
 	//normal_matrix = glm::inverseTranspose(model_transform);

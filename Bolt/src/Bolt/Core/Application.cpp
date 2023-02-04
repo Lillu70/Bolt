@@ -35,9 +35,12 @@ namespace Bolt
 			glfwPollEvents();
 
 			User_Update(m_time_step);
-			
-			m_renderer->Submit(m_render_submissions);
-			m_renderer->Submit(m_render_submissions_billboard);
+
+			for (std::unique_ptr<Layer>& layer : m_layers)
+			{
+				layer->Update(m_time_step);
+				m_renderer->Submit(layer->Get_Render_Submissions());
+			}
 
 			m_renderer->Draw_Frame(m_clear_color);
 
@@ -81,24 +84,37 @@ namespace Bolt
 		return *(m_input.get());
 	}
 
+
 	Assets& Application::Asset()
 	{
 		return *(m_assets.get());
 	}
+
 
 	Time Application::Time_Step()
 	{
 		return m_time_step;
 	}
 
+
 	void Application::Set_Global_Light_Source_Direction(glm::vec3 new_direction)
 	{
 		m_renderer->Set_Global_Light_Source_Direction(new_direction);
 	}
 
+
 	void Application::Set_Viewport_Matrix(glm::mat4 new_matrix)
 	{
 		m_renderer->Set_Viewport_Matrix(new_matrix);
+	}
+
+	void Application::Push_Layer(std::unique_ptr<Layer> layer)
+	{
+		ASSERT(layer.get(), "Attempting to push a nullptr!");
+		auto& _layer = m_layers.emplace_back(std::move(layer));
+		_layer->m_assets = m_assets.get();
+		_layer->m_input = m_input.get();
+		_layer->Initialize();
 	}
 }
 

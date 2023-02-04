@@ -13,14 +13,14 @@ Bolt::Assets::~Assets()
 
 	for (auto& [file_path, material] : m_material_map)
 		m_renderer_resource_factory->Destroy(material);
-}
+} 
 
-std::vector<std::pair<std::string, std::string>>& Bolt::Assets::Load_Model_File(const char* file_path, Bolt::Shader shader)
+std::vector<std::pair<std::string, std::string>>& Bolt::Assets::Load_Model_File(const std::string& file_path, Bolt::Shader shader)
 {
 	m_active_shader = shader;
 
 	std::string name, extension;
-	Parsing::Extract_File_Extension_And_Name_From_CSTR(file_path, extension, name);
+	Parsing::Extract_File_Extension_And_Name_From_CSTR(file_path.c_str(), extension, name);
 
 	if (extension == "obj")
 	{
@@ -122,7 +122,7 @@ void Bolt::Assets::Push_Mesh(const std::string& name, std::vector<Vertex>& verti
 	m_renderer_resource_factory->Load_Mesh(vertices, indices, mesh);
 }
 
-void Bolt::Assets::Push_Material(const std::string& model_name, const std::string material_name, Material_Data& material_data)
+void Bolt::Assets::Push_Material(const std::string& model_name, const std::string& material_name, Material_Data& material_data)
 {
 	auto find = m_material_map.find(material_name.c_str());
 	if (find != m_material_map.end())
@@ -133,11 +133,15 @@ void Bolt::Assets::Push_Material(const std::string& model_name, const std::strin
 
 	Material_Properties properties;
 	properties.roughness = material_data.specular_exponent;
+	properties.diffuse_color = material_data.diffuse_color;
+	properties.specular_color = material_data.specular_color;
 
 	if (material_data.m_deffuse_texture_name == "")
 		material_data.m_deffuse_texture_name = "white.png";
 	else
 		material_data.m_deffuse_texture_name = model_name + "/" + material_data.m_deffuse_texture_name;
+		
 
 	Create_Material(material_name.c_str(), properties, Texture(material_data.m_deffuse_texture_name.c_str()), m_active_shader);
 }
+

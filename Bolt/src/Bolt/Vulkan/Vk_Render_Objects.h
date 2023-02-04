@@ -6,11 +6,11 @@ namespace Bolt
 	struct Render_Object_3D_Model
 	{
 		Render_Object_3D_Model() = default;
-		Render_Object_3D_Model(Mesh* mesh, Material* material, glm::mat4 transform) : mesh(mesh), material(material), transform(transform) {}
+		Render_Object_3D_Model(Mesh* mesh, Material* material, glm::mat4* transform) : mesh(mesh), material(material), transform(transform) {}
 
 		Mesh* mesh = nullptr;
 		Material* material = nullptr;
-		glm::mat4 transform = glm::mat4(0);
+		glm::mat4* transform = nullptr;
 	};
 
 	struct Render_Object_Billboard
@@ -21,8 +21,8 @@ namespace Bolt
 		Mesh* mesh = nullptr;
 		Material* material = nullptr;
 
-		glm::vec3 position;
-		glm::vec2 scale;
+		glm::vec3 position = glm::vec3(0);
+		glm::vec2 scale = glm::vec2(1);
 	};
 
 	struct Render_Object_Cicle
@@ -39,10 +39,10 @@ namespace Bolt
 		float thickness;
 	};
 
-	struct Renderer_Submissions
+	struct Render_Submission
 	{
-		std::vector<const std::vector<Render_Object_3D_Model>*> m_models_3D;
-		std::vector<const std::vector<Render_Object_Billboard>*> m_billboards;
+		std::vector<Render_Object_3D_Model> m_models_3D;
+		std::vector<Render_Object_Billboard> m_billboards;
 
 		void Clear()
 		{
@@ -51,17 +51,6 @@ namespace Bolt
 		}
 	};
 
-	struct Scoped_Clear_Renderer_Submissions
-	{
-		Scoped_Clear_Renderer_Submissions(Renderer_Submissions& target) : target(target) {}
-		
-		~Scoped_Clear_Renderer_Submissions()
-		{
-			target.Clear();
-		}
-
-	private:
-		Renderer_Submissions& target;
-	};
+	
 }
 

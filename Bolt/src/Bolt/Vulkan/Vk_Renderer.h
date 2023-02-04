@@ -6,25 +6,22 @@
 #include "Vk_Resources.h"
 #include "Vk_Assist.h"
 
-#include "Renderer.h"
 #include "Renderer_Resource_Factory.h"
 
 namespace Bolt
 {
 	GLFWwindow* Create_GLFW_Window(glm::u32vec2 dimensions, const char* title);
 
-	class Vk_Renderer : public Renderer, public Resource_Factory
+	class Vk_Renderer : public Resource_Factory
 	{
 	public:
 		Vk_Renderer(GLFWwindow* window);
 		~Vk_Renderer();
+		
+		void Submit(const Render_Submission& submissions);
 
 		void Draw_Frame(glm::vec3 clear_color = glm::vec3(0));
 
-		
-		void Submit(const std::vector<Render_Object_3D_Model>& render_objects) override;
-		void Submit(const std::vector<Render_Object_Billboard>& render_objects) override;
-	
 		Enviroment_Data& Get_Enviroment_Data_Ref();
 		void Set_Viewport_Matrix(glm::mat4 transform);
 		void Set_Global_Light_Source_Direction(glm::vec3 light_direction);
@@ -77,9 +74,9 @@ namespace Bolt
 		Push_Constant Create_Push_Constant_3D_Model(const glm::mat4& model_transform);
 		Push_Constant Create_Push_Constant_Billboard(const glm::vec3& position, const glm::vec2& scale);
 
+		void Draw_Submissions(VkCommandBuffer& cmd_buffer);
 		void Draw_Model_3D(const std::vector<Render_Object_3D_Model>* render_set, VkCommandBuffer& cmd_buffer);
 		void Draw_Billboard(const std::vector<Render_Object_Billboard>* render_set, VkCommandBuffer& cmd_buffer);
-
 
 	private:
 		static VKAPI_ATTR VkBool32 VKAPI_CALL Debug_Callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, VkDebugUtilsMessageTypeFlagsEXT message_type, const VkDebugUtilsMessengerCallbackDataEXT* callback_data_ptr, void* user_data_ptr);
@@ -112,7 +109,7 @@ namespace Bolt
 		bool m_framebuffer_resized = false;
 		glm::ivec2 m_framebuffer_size;
 
-		Renderer_Submissions m_submissions;
+		std::vector<const Render_Submission*> m_submissions;
 		glm::mat4 m_view = glm::mat4(1);
 		glm::mat4 m_proj = glm::mat4(1);
 
