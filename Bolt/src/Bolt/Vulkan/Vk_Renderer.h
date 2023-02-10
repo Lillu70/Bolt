@@ -1,12 +1,10 @@
 #pragma once
 
-#include "Vk_Descriptor_Allocator.h"
-#include "Vk_Internal_Components.h"
-#include "Vk_Render_Objects.h"
-#include "Vk_Resources.h"
-#include "Vk_Assist.h"
-
 #include "Renderer_Resource_Factory.h"
+#include "Render_Submissions.h"
+
+#include "Vk_Descriptor_Allocator.h"
+#include "Vk_Assist.h"
 
 namespace Bolt
 {
@@ -18,16 +16,11 @@ namespace Bolt
 		Vk_Renderer(GLFWwindow* window);
 		~Vk_Renderer();
 		
-		void Submit(const Render_Submission& submissions);
+		void Draw_Frame(Render_Submissions& submissions, glm::vec3 clear_color = glm::vec3(0));
 
-		void Draw_Frame(glm::vec3 clear_color = glm::vec3(0));
+		VkExtent2D* Swapchain_Extent() { return &m_swapchain.extent; }
 
-		Enviroment_Data& Get_Enviroment_Data_Ref();
-		void Set_Viewport_Matrix(glm::mat4 transform);
-		void Set_Global_Light_Source_Direction(glm::vec3 light_direction);
-		void Set_Global_Light_Source_Color(glm::vec3 light_color);
-		void Set_Ambient_Color(glm::vec3 color);
-
+		//External resource Creation functions.
 	public: 
 		void Load_Texture(const char* file_path, Texture& output_texture) override;
 		void Destroy(Texture& texture) override;
@@ -41,11 +34,15 @@ namespace Bolt
 		void Load_Mesh(const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices, Mesh& output_mesh) override;
 		void Destroy(Mesh& mesh) override;
 
+		void Create_Render_Pass(Render_Pass& output, Clear_Method color_clear_method, Clear_Method depth_clear_method) override;
+		void Destroy(Render_Pass& render_pass) override;
+
+		void Create_Scene_Descriptor(Scene_Descriptor& output) override;
+		void Destroy(Scene_Descriptor& scene_descriptor) override;
+
 	private:
 		void Create_Default_Resources();
 		void Destory_Default_Resources();
-
-		Raw_Shader* Extract_Raw_Shader(const Shader shader);
 
 	private:
 		void Init();
@@ -60,23 +57,23 @@ namespace Bolt
 		void Create_Graphics_Pipeline_Layout(std::vector<VkDescriptorSetLayout> layouts);
 
 		void Recreate_Swapchain();
-		void Calculate_Projection_Matrix();
-
+		
+		Raw_Shader* Extract_Raw_Shader(const Shader shader);
+	
 		//Draw frame utility functions.
 		bool Acquire_Image_From_Swapchain(Frame_Data& frame);
 		void Submit_Graphics_Queue(const Frame_Data& frame);
 		void Present_To_Surface(const Frame_Data& frame);
+		void Beging_Secondary_Pass(Bolt::Render_Submissions& submissions, Bolt::Frame_Data& frame, VkCommandBuffer& cmd_buffer, VkFramebuffer& framebuffer, glm::vec3& clear_color);
+		void Beging_First_Pass(Bolt::Render_Submissions& submissions, Bolt::Frame_Data& frame, VkCommandBuffer& cmd_buffer, VkFramebuffer& framebuffer, glm::vec3& clear_color);
+		void Draw_Render_Pass(Bolt::Pass_Submissions& active_pass, VkCommandBuffer& cmd_buffer, VkFramebuffer& framebuffer, const glm::vec3& clear_color);
 
-		std::array<VkDescriptorSet, 2> Descriptor_Sets_To_Bind(Frame_Data& frame, Material* material);
-
-		void Update_Unifrom_Buffer(const Frame_Data& frame);
+		void Draw_Submissions(VkCommandBuffer& cmd_buffer, const Pass_Submissions& submissions);
+		void Draw_Model_3D(const std::vector<Render_Object_3D_Model>* render_set, VkCommandBuffer& cmd_buffer);
+		void Draw_Billboard(const std::vector<Render_Object_Billboard>* render_set, VkCommandBuffer& cmd_buffer);
 
 		Push_Constant Create_Push_Constant_3D_Model(const glm::mat4& model_transform);
 		Push_Constant Create_Push_Constant_Billboard(const glm::vec3& position, const glm::vec2& scale);
-
-		void Draw_Submissions(VkCommandBuffer& cmd_buffer);
-		void Draw_Model_3D(const std::vector<Render_Object_3D_Model>* render_set, VkCommandBuffer& cmd_buffer);
-		void Draw_Billboard(const std::vector<Render_Object_Billboard>* render_set, VkCommandBuffer& cmd_buffer);
 
 	private:
 		static VKAPI_ATTR VkBool32 VKAPI_CALL Debug_Callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, VkDebugUtilsMessageTypeFlagsEXT message_type, const VkDebugUtilsMessengerCallbackDataEXT* callback_data_ptr, void* user_data_ptr);
@@ -91,7 +88,7 @@ namespace Bolt
 		VkSurfaceKHR m_surface = VK_NULL_HANDLE;
 		VkDebugUtilsMessengerEXT m_debug_messenger = VK_NULL_HANDLE;
 		VkDevice m_device = VK_NULL_HANDLE;
-		VkRenderPass m_render_pass = VK_NULL_HANDLE;
+		VkRenderPass m_dummy_render_pass = VK_NULL_HANDLE;
 		VkSampler m_sampler = VK_NULL_HANDLE;
 		VkPipelineLayout m_pipeline_layout = VK_NULL_HANDLE;
 
@@ -101,27 +98,17 @@ namespace Bolt
 		Command_Pools m_command_pools;
 		Swapchain_Description m_swapchain;
 		Image_Description m_depth_image;
-
-		static const uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+		
 		std::array<Frame_Data, MAX_FRAMES_IN_FLIGHT> m_frame_data;
 
-		uint32_t m_current_frame = 0;
+		u32 m_current_frame = 0;
 		bool m_framebuffer_resized = false;
 		glm::ivec2 m_framebuffer_size;
-
-		std::vector<const Render_Submission*> m_submissions;
-		glm::mat4 m_view = glm::mat4(1);
-		glm::mat4 m_proj = glm::mat4(1);
-
-		Enviroment_Data m_enviroment_data;
 
 		Vk_Descriptor_Allocator m_descriptors;
 
 		//default resources
 		Raw_Shader m_default_shader;
 		Raw_Shader m_default_billboard_shader;
-
 	};
 }
-
-

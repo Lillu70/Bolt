@@ -1,6 +1,7 @@
 #pragma once
 #include <Bolt.h>
 
+
 class Test_Layer : public Bolt::Layer
 {
 public:
@@ -9,6 +10,7 @@ public:
 
 private:
 	Bolt::Entity player;
+	Bolt::Entity camera;
 
 };
 

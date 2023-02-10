@@ -22,6 +22,8 @@
     <ClInclude Include="src\Bolt\Core\Component_System.h" />
     <ClInclude Include="src\Bolt\Core\Layer.h" />
     <ClInclude Include="src\Bolt\Core\Build_In_Components.h" />
+    <ClInclude Include="src\Bolt\Vulkan\Render_Submissions.h" />
+    <ClInclude Include="src\Bolt\Core\Bolt_Types.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Bolt\Core\Application.cpp" />
@@ -33,5 +35,6 @@
     <ClCompile Include="src\Bolt\Core\Assets.cpp" />
     <ClCompile Include="src\Bolt\Vulkan\Vk_Render_Objects.cpp" />
     <ClCompile Include="src\Bolt\Core\Layer.cpp" />
+    <ClCompile Include="src\Bolt\Vulkan\Render_Submissions.cpp" />
   </ItemGroup>
 </Project>

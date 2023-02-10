@@ -1,7 +1,6 @@
 #pragma once
 
-#include "Vk_Internal_Components.h"
-
+#include "Vk_Assist.h"
 
 namespace Bolt
 {
@@ -96,11 +95,40 @@ namespace Bolt
 		uint32_t m_index_count = 0;
 	};
 
-	struct Enviroment_Data
+	struct Render_Pass
 	{
-		glm::vec3 global_light_direction = glm::vec3(1, 3, 1);
-		glm::vec3 global_light_color = glm::vec3(1);
-		glm::vec3 amplient_color = glm::vec3(0.005, 0.005, 0.005);
+		friend Vk_Renderer;
+
+	private:
+		VkRenderPass renderpass = VK_NULL_HANDLE;
+	};
+
+
+	struct Scene_Descriptor
+	{
+		friend Vk_Renderer;
+		
+		void Set_Data(Camera_Data& camera_data, Enviroment_Data& enviroment_data)
+		{
+			this->camera_data = camera_data;
+			this->enviroment_data = enviroment_data;
+		}
+
+	private:
+		void Update(u32 index);
+		void Write_Default_Values_Into_All_Descriptors();
+
+		Camera_Data camera_data;
+		Enviroment_Data enviroment_data;
+
+		struct PFD
+		{
+			Buffer_Description buffer;
+			VkDescriptorSet descriptor_set = VK_NULL_HANDLE;
+		};
+		std::array<PFD, MAX_FRAMES_IN_FLIGHT> pfd;
+
+		VkDevice device = VK_NULL_HANDLE;
 	};
 }
 

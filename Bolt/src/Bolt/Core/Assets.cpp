@@ -13,6 +13,12 @@ Bolt::Assets::~Assets()
 
 	for (auto& [file_path, material] : m_material_map)
 		m_renderer_resource_factory->Destroy(material);
+
+	for (auto& [key, render_pass] : m_render_pass_map)
+		m_renderer_resource_factory->Destroy(render_pass);
+
+	for (auto& [key, scene_descriptor] : m_scene_descriptor_map)
+		m_renderer_resource_factory->Destroy(scene_descriptor);
 } 
 
 std::vector<std::pair<std::string, std::string>>& Bolt::Assets::Load_Model_File(const std::string& file_path, Bolt::Shader shader)
@@ -94,6 +100,34 @@ Bolt::Material* Bolt::Assets::Material(const std::string& material_name)
 	return Material(material_name);
 }
 
+Bolt::Scene_Descriptor* Bolt::Assets::Create_Scene_Descriptor(u32 main_pass_index, u32 subpass_index)
+{
+	u32 key = main_pass_index * 1000 + subpass_index;
+	auto find = m_scene_descriptor_map.find(key);
+	if (find != m_scene_descriptor_map.end())
+		ERROR(std::string("Scene descripor with key [") + std::to_string(key) + "] already exists!");
+
+	Bolt::Scene_Descriptor& scene_descriptor = m_scene_descriptor_map[key];
+
+	m_renderer_resource_factory->Create_Scene_Descriptor(scene_descriptor);
+	
+	return &scene_descriptor;
+}
+
+Bolt::Render_Pass* Bolt::Assets::Create_Render_Pass(u32 main_pass_index, u32 subpass_index, Clear_Method color_clear, Clear_Method depth_clear)
+{
+	u32 key = main_pass_index * 1000 + subpass_index;
+	auto find = m_render_pass_map.find(key);
+	if (find != m_render_pass_map.end())
+		ERROR(std::string("Render pass with key [") + std::to_string(key) + "] already exists!");
+
+	Bolt::Render_Pass& render_pass = m_render_pass_map[key];
+
+	m_renderer_resource_factory->Create_Render_Pass(render_pass, color_clear, depth_clear);
+
+	return &render_pass;
+}
+
 void Bolt::Assets::Create_Material(const std::string& material_name, Material_Properties properties, Bolt::Texture* texture, Bolt::Shader shader)
 {
 	ASSERT(texture, "Texture is a nullptr");
@@ -144,4 +178,3 @@ void Bolt::Assets::Push_Material(const std::string& model_name, const std::strin
 
 	Create_Material(material_name.c_str(), properties, Texture(material_data.m_deffuse_texture_name.c_str()), m_active_shader);
 }
-

@@ -2,74 +2,68 @@
 
 void Test_Layer::Initialize()
 {
+	Bolt::Render_Pass_Info rps;
+	rps.render_pass = Asset().Create_Render_Pass(Layer_Index(), Subpass_Count() + 1, Bolt::Clear_Method::Load, Bolt::Clear_Method::Clear);
+	Push_Rendering_Subpass(rps);
+
 	Create_Entity(player);
 	
 	player.Attach<Bolt::Transform>(glm::vec3(0,0,-5.f));
-	Spawn_Entities_From_Model("Cube.obj", player.Find<Bolt::Transform>());
-	Spawn_Billboards_From_Model("point_light.obj", player.Find<Bolt::Transform>(), glm::vec3(0,5,0));
+	Spawn_Entities_From_Model("Cube.obj", 0, player.Find<Bolt::Transform>());
+	Spawn_Billboards_From_Model("point_light.obj", 1, player.Find<Bolt::Transform>(), glm::vec3(0,5,0));
+	Spawn_Billboards_From_Model("point_light.obj", 1, player.Find<Bolt::Transform>(), glm::vec3(0, 10, 0));
+	Spawn_Billboards_From_Model("point_light.obj", 1, player.Find<Bolt::Transform>(), glm::vec3(0, 15, 0));
+
+	//Spawn_Entities_From_Model("Cube.obj", 0, nullptr, glm::vec3(0, 0, 0), glm::vec3(0, 5, 0), glm::vec3(-3, -3, -3));
 
 	//Reference car!
-	Spawn_Entities_From_Model("SPEEDSTERR.obj");
+	Spawn_Entities_From_Model("SPEEDSTERR.obj", 0);
+
+	camera = Create_Entity(ECS().Get_Entity_ID(ECS().Components<Bolt::Camera>()[0]));
+	camera.Attach<Bolt::Camera_Controller>(camera);
 }
 
 void Test_Layer::Update(Bolt::Time time_step)
 {
-	glm::vec3 movement_vector = glm::vec3(0);
+	glm::vec3 movement = glm::vec3(0);
+	
+	if (Input().Get(Bolt::Key::W).Is_Pressed())
+		if(Input().Get(Bolt::Key::Left_Shift).Is_Pressed())
+			movement.z -= 1;
+		else
+			movement.y -= 1;
+	if (Input().Get(Bolt::Key::S).Is_Pressed())
+		if (Input().Get(Bolt::Key::Left_Shift).Is_Pressed())
+			movement.z += 1;
+		else
+			movement.y += 1;
+	if (Input().Get(Bolt::Key::D).Is_Pressed())
+		movement.x -= 1;
+	if (Input().Get(Bolt::Key::A).Is_Pressed())
+		movement.x += 1;
 
-	if (Input().Get(Bolt::Key::KP_8).Is_Pressed())
-		movement_vector.y += 1;
-	if (Input().Get(Bolt::Key::KP_2).Is_Pressed())
-		movement_vector.y -= 1;
-	if (Input().Get(Bolt::Key::KP_6).Is_Pressed())
-		movement_vector.x += 1;
-	if (Input().Get(Bolt::Key::KP_4).Is_Pressed())
-		movement_vector.x -= 1;
-	if (Input().Get(Bolt::Key::KP_5).Is_Pressed())
-		movement_vector.z -= 1;
-	if (Input().Get(Bolt::Key::KP_0).Is_Pressed())
-		movement_vector.z += 1;
-	if (Input().Get(Bolt::Key::KP_7).Is_Pressed())
-	{
-		movement_vector.y += 1;
-		movement_vector.x -= 1;
-	}
-	if (Input().Get(Bolt::Key::KP_9).Is_Pressed())
-	{
-		movement_vector.y += 1;
-		movement_vector.x += 1;
-	}
-	if (Input().Get(Bolt::Key::KP_1).Is_Pressed())
-	{
-		movement_vector.y -= 1;
-		movement_vector.x -= 1;
-	}
-	if (Input().Get(Bolt::Key::KP_3).Is_Pressed())
-	{
-		movement_vector.y -= 1;
-		movement_vector.x += 1;
-	}
-		
-	if (movement_vector != glm::vec3(0))
-	{
-		float movement_speed = 10;
+	float yaw = 0;
+	float pich = 0;
 
-		movement_vector = glm::normalize(movement_vector);
-		movement_vector *= movement_speed *= time_step.As_Seconds();
+	if (Input().Get(Bolt::Key::Right).Is_Pressed())
+		yaw += 1;
+	if (Input().Get(Bolt::Key::Left).Is_Pressed())
+		yaw -= 1;
 
-		player.Get<Bolt::Transform>().Offset_Local_Position(movement_vector);
-	}
+	if (Input().Get(Bolt::Key::Down).Is_Pressed())
+		pich += 1;
+	if (Input().Get(Bolt::Key::Up).Is_Pressed())
+		pich -= 1;
 
-	glm::vec3 scale_vector = glm::vec3(0);
+	float horizontal_move = 0;
+	if (Input().Get(Bolt::Key::G).Is_Pressed())
+		horizontal_move += 1;
 
-	if (Input().Get(Bolt::Key::KP_Devide).Is_Pressed())
-		scale_vector -= 1.f;
-	if (Input().Get(Bolt::Key::KP_Multiply).Is_Pressed())
-		scale_vector += 1.f;
+	float vertical_move = 0;
+	if (Input().Get(Bolt::Key::G).Is_Pressed())
+		vertical_move += 1;
 
-	if (scale_vector != glm::vec3(0))
-	{
-		float scale_speed = 1;
-		scale_vector *= scale_speed *= time_step.As_Seconds();
-		player.Get<Bolt::Transform>().Offset_Local_Scale(scale_vector);
-	}
+	//camera.Get<Bolt::Camera_Controller>().Relative_Move_Vertical(vertical_move, 3 * time_step.As_Seconds());
+	camera.Get<Bolt::Camera_Controller>().Relative_Move(movement, 3 * time_step.As_Seconds());
+	camera.Get<Bolt::Camera_Controller>().Rotate(yaw, pich, 100 * time_step);
 }

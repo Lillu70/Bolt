@@ -267,30 +267,10 @@ void Bolt::Vk_Init::Retrive_Device_Queues(VkDevice device, Queue_Families queue_
     vkGetDeviceQueue(device, queue_families.present, 0, &output.present);
 }
 
-void Bolt::Vk_Init::Create_Render_Pass(VkDevice device, Format_Description formats, VkRenderPass& output)
+void Bolt::Vk_Init::Create_Render_Pass(VkDevice device, Formats formats, VkRenderPass& output)
 {
     ASSERT(device, "Logical device is a nullptr!");
     ASSERT(output == VK_NULL_HANDLE, "Render pass already created!");
-
-    VkAttachmentDescription color_attachment{};
-    color_attachment.format = formats.surface.format;
-    color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    color_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    color_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    color_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
-    VkAttachmentDescription depth_attachment{};
-    depth_attachment.format = formats.depth;
-    depth_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
-    depth_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    depth_attachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depth_attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    depth_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    depth_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    depth_attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkAttachmentReference color_attachment_ref{};
     color_attachment_ref.attachment = 0;
@@ -317,7 +297,7 @@ void Bolt::Vk_Init::Create_Render_Pass(VkDevice device, Format_Description forma
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-    std::array<VkAttachmentDescription, 2> attachments = { color_attachment, depth_attachment };
+    std::array<VkAttachmentDescription, 2> attachments = { Vk_Util::Color_Clear_Attach(formats), Vk_Util::Depth_Clear_Attach(formats) };
 
     VkRenderPassCreateInfo render_pass_info{};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -332,6 +312,60 @@ void Bolt::Vk_Init::Create_Render_Pass(VkDevice device, Format_Description forma
         ERROR("failed to create render pass!");
 }
 
+
+void Bolt::Vk_Init::Create_Render_Pass(VkDevice device, const std::vector<VkAttachmentDescription>& color_attachments, std::optional<VkAttachmentDescription> depth_attachment, VkRenderPass& output)
+{
+    ASSERT(device, "Logical device is a nullptr!");
+    ASSERT(!color_attachments.empty() || depth_attachment.has_value(), "Invalid attachment layout!");
+    ASSERT(output == VK_NULL_HANDLE, "Render pass already created!");
+    
+    std::vector<VkAttachmentReference> color_attachment_references(color_attachments.size());
+    color_attachment_references.resize(color_attachment_references.size());
+
+    for (uint32_t i = 0; i < color_attachment_references.size(); i++)
+    {
+        color_attachment_references[i].attachment = i;
+        color_attachment_references[i].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = (u32)color_attachments.size();
+    subpass.pColorAttachments = color_attachment_references.data();
+
+    std::vector<VkAttachmentDescription> attachments(color_attachments);
+    if (depth_attachment.has_value())
+    {
+        VkAttachmentReference depth_attachment_ref{};
+        depth_attachment_ref.attachment = (u32)color_attachments.size();
+        depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        subpass.pDepthStencilAttachment = &depth_attachment_ref;
+        
+        attachments.push_back(depth_attachment.value());
+    }
+    
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+    VkRenderPassCreateInfo render_pass_info{};
+    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    render_pass_info.attachmentCount = (uint32_t)attachments.size();
+    render_pass_info.pAttachments = attachments.data();
+    render_pass_info.subpassCount = 1;
+    render_pass_info.pSubpasses = &subpass;
+    render_pass_info.dependencyCount = 1;
+    render_pass_info.pDependencies = &dependency;
+
+    if (vkCreateRenderPass(device, &render_pass_info, nullptr, &output) != VK_SUCCESS)
+        ERROR("failed to create render pass!");
+}
+
+
 void Bolt::Vk_Init::Create_Descriptor_Set_Layout(VkDevice device, const std::vector<VkDescriptorSetLayoutBinding>& layout_bindings, VkDescriptorSetLayout& output)
 {
     ASSERT(device, "Logical device is a nullptr!");
@@ -342,7 +376,7 @@ void Bolt::Vk_Init::Create_Descriptor_Set_Layout(VkDevice device, const std::vec
 
     layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
     layout_info.pBindings = layout_bindings.data();
-    layout_info.bindingCount = static_cast<uint32_t>(layout_bindings.size());
+    layout_info.bindingCount = (uint32_t)layout_bindings.size();
 
     if (vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &output) != VK_SUCCESS)
         ERROR("failed to create descriptor set layout!");
@@ -702,7 +736,7 @@ void Bolt::Vk_Init::Create_Depth_Resources(VkDevice device, GPU gpu, Swapchain_D
     Vk_Util::Transition_Image_Layout(device, command_pools, device_queues, transition_info);
 }
 
-void Bolt::Vk_Init::Create_Framebuffer(VkDevice device, VkRenderPass render_pass, Image_Description depth_image, Swapchain_Description& output)
+void Bolt::Vk_Init::Create_Framebuffers(VkDevice device, VkRenderPass render_pass, Image_Description depth_image, Swapchain_Description& output)
 {
     ASSERT(device, "Logical device is a nullptr!");
     ASSERT(render_pass, "render_pass is a nullptr!");
@@ -792,28 +826,6 @@ void Bolt::Vk_Init::Create_Frame_Syncronization_Objects(VkDevice device, Frame_S
     if (vkCreateFence(device, &fence_info, nullptr, &output.render_fence) != VK_SUCCESS)
         ERROR("Failed to create fence!");
 }
-
-/*
-void Bolt::Vk_Init::Create_Uniform_Buffers(VkDevice device, GPU gpu, uint32_t buffer_count, Uniform_Buffer_Description& output)
-{
-    ASSERT(device, "Logical device is a nullptr!");
-    ASSERT(buffer_count, "Buffer count is 0!");
-    ASSERT(output.buffers.empty(), "Buffers already created!");
-    ASSERT(output.mapped.empty(), "Buffers map already created!");
-
-    output.buffers.resize(buffer_count);
-    output.mapped.resize(buffer_count);
-
-    VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-    VkDeviceSize buffer_size = sizeof(Uniform_Buffer_Object);
-
-    for (uint32_t i = 0; i < buffer_count; i++)
-    {
-        Vk_Util::Create_Buffer(device, gpu, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, properties, buffer_size, output.buffers[i]);
-        vkMapMemory(device, output.buffers[i].memory, 0, buffer_size, 0, &output.mapped[i]);
-    }
-}
-*/
 
 void Bolt::Vk_Util::Create_Image(VkDevice device, GPU gpu, Image_Create_Info& image_create_info, Image_Description& output)
 {
@@ -1106,14 +1118,24 @@ void Bolt::Vk_Util::Create_Staging_Buffer(VkDevice device, GPU gpu, void* source
     VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
 
     Vk_Util::Create_Buffer(device, gpu, usage, properties, size, output);
-
-    void* data = nullptr;
-    vkMapMemory(device, output.memory, 0, size, 0, &data);
-    memcpy(data, source, (size_t)size);
-    vkUnmapMemory(device, output.memory);
+    Vk_Util::Write_To_Buffer(device, output, size, source);
 }
 
-void Bolt::Vk_Util::Begin_Command_Buffer(VkCommandBuffer& cmd_buffer)
+void Bolt::Vk_Util::Write_To_Buffer(VkDevice device, Buffer_Description buffer, VkDeviceSize buffer_size, void* data, u32 buffer_offset)
+{
+    ASSERT(device, "Logical device is a nullptr!");
+    ASSERT(buffer_size, "Buffer size is 0!");
+    ASSERT(data, "Data is a nullptr!");
+    ASSERT(buffer.handle != VK_NULL_HANDLE, "Buffer is already created!");
+    ASSERT(buffer.memory != VK_NULL_HANDLE, "Buffer is already allocated!");
+
+    void* maped_memory = nullptr;
+    vkMapMemory(device, buffer.memory, 0, buffer_size, buffer_offset, &maped_memory);
+    memcpy(maped_memory, data, buffer_size);
+    vkUnmapMemory(device, buffer.memory);
+}
+
+void Bolt::Vk_Util::RCMD_Begin_Command_Buffer(VkCommandBuffer& cmd_buffer)
 {
     ASSERT(cmd_buffer, "Command Buffer is a nullptr!");
 
@@ -1124,7 +1146,7 @@ void Bolt::Vk_Util::Begin_Command_Buffer(VkCommandBuffer& cmd_buffer)
         ERROR("Failed to begin recording command buffer!");
 }
 
-void Bolt::Vk_Util::CMD_Set_View_Port(VkCommandBuffer cmd_buffer, Swapchain_Description& swapchain)
+void Bolt::Vk_Util::RCMD_Set_View_Port(VkCommandBuffer cmd_buffer, Swapchain_Description& swapchain)
 {
     ASSERT(cmd_buffer, "Command Buffer is a nullptr!");
     ASSERT(swapchain.handle, "Swapchain is a nullptr");
@@ -1139,7 +1161,7 @@ void Bolt::Vk_Util::CMD_Set_View_Port(VkCommandBuffer cmd_buffer, Swapchain_Desc
     vkCmdSetViewport(cmd_buffer, 0, 1, &viewport);
 }
 
-void Bolt::Vk_Util::CMD_Set_Scissors(VkCommandBuffer cmd_buffer, Swapchain_Description& swapchain)
+void Bolt::Vk_Util::RCMD_Set_Scissors(VkCommandBuffer cmd_buffer, Swapchain_Description& swapchain)
 {
     ASSERT(cmd_buffer, "Command Buffer is a nullptr!");
     ASSERT(swapchain.handle, "Swapchain is a nullptr");
@@ -1150,11 +1172,69 @@ void Bolt::Vk_Util::CMD_Set_Scissors(VkCommandBuffer cmd_buffer, Swapchain_Descr
     vkCmdSetScissor(cmd_buffer, 0, 1, &scissor);
 }
 
-void Bolt::Vk_Util::Begin_Render_Pass(VkCommandBuffer cmd_buffer, VkRenderPass render_pass, Swapchain_Description& swapchain, uint32_t image_index, glm::vec3& clear_color)
+
+VkAttachmentDescription Bolt::Vk_Util::Depth_Clear_Attach(Formats format)
+{
+    VkAttachmentDescription attachment{};
+    attachment.format = format.depth;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    return attachment;
+}
+
+VkAttachmentDescription Bolt::Vk_Util::Depth_Load_Attach(Formats format)
+{
+    VkAttachmentDescription attachment{};
+    attachment.format = format.depth;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+    return attachment;
+}
+
+VkAttachmentDescription Bolt::Vk_Util::Color_Clear_Attach(Formats format)
+{
+    VkAttachmentDescription attachment{};
+    attachment.format = format.surface.format;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    return attachment;
+}
+
+VkAttachmentDescription Bolt::Vk_Util::Color_Load_Attach(Formats format)
+{
+    VkAttachmentDescription attachment{};
+    attachment.format = format.surface.format;
+    attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    attachment.loadOp = VK_ATTACHMENT_LOAD_OP_LOAD;
+    attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    attachment.initialLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+    return attachment;
+}
+
+void Bolt::Vk_Util::RCMD_Begin_Render_Pass(VkCommandBuffer cmd_buffer, VkRenderPass render_pass, VkFramebuffer framebuffer, VkExtent2D extent, glm::vec3 clear_color)
 {
     ASSERT(cmd_buffer, "Command Buffer is a nullptr!");
     ASSERT(render_pass, "Render Pass is a nullptr");
-    ASSERT(swapchain.handle, "Swapchain is a nullptr");
+    ASSERT(framebuffer, "Framebuffer is a nullptr");
+    ASSERT(extent.height != 0 && extent.width != 0, "Invalid extent!");
 
     std::array<VkClearValue, 2> clear_values{};
     clear_values[0].color = { { clear_color.r, clear_color.g, clear_color.b, 1.0f } };
@@ -1163,9 +1243,9 @@ void Bolt::Vk_Util::Begin_Render_Pass(VkCommandBuffer cmd_buffer, VkRenderPass r
     VkRenderPassBeginInfo render_pass_info{};
     render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     render_pass_info.renderPass = render_pass;
-    render_pass_info.framebuffer = swapchain.framebuffers[image_index];
+    render_pass_info.framebuffer = framebuffer;
     render_pass_info.renderArea.offset = { 0, 0 };
-    render_pass_info.renderArea.extent = swapchain.extent;
+    render_pass_info.renderArea.extent = extent;
     render_pass_info.clearValueCount = static_cast<uint32_t>(clear_values.size());
     render_pass_info.pClearValues = clear_values.data();;
 
@@ -1357,8 +1437,6 @@ void Bolt::Vk_Dest::Clear_Frame_Data(VkDevice device, Frame_Data& input)
     vkDestroySemaphore(device, input.sync.image_available_semaphore, nullptr);
     vkDestroySemaphore(device, input.sync.render_finished_semaphore, nullptr);
     vkDestroyFence(device, input.sync.render_fence, nullptr);
-
-    Clear_Buffer(device, input.camera_buffer);
 
     input = {};
 }

@@ -2,7 +2,9 @@
 
 #include "../Vulkan/Vk_Resources.h"
 
+#include "Bolt_Types.h"
 #include "Component_System.h"
+
 #include <glm/glm.hpp>
 
 namespace Bolt
@@ -122,7 +124,7 @@ namespace Bolt
 				child->Update_Transform_Matrix();
 		}
 
-		glm::mat4* Get_Matrix() { return &m_matrix; };
+		const glm::mat4* Get_Matrix() const { return &m_matrix; };
 
 		void Make_Root()
 		{
@@ -158,19 +160,107 @@ namespace Bolt
 		Transform* m_parent = nullptr;
 		std::vector<Transform*> m_children;
 	};
-	
+
+	struct Camera
+	{
+		Camera(Entity entity) : transform(entity.Get<Transform>()) {}
+		
+		Transform& transform;
+		glm::vec3 up_direction = glm::vec3(0, 1, 0);
+	};
+
+	struct Camera_Controller
+	{
+		Camera_Controller(Entity entity) : camera(entity.Get<Camera>()) { Update_Camera_Rotation(); }
+
+		void Move(glm::vec3 direction, float amplitude)
+		{
+			if (direction == glm::vec3(0) || amplitude == 0) return;
+			direction = glm::normalize(direction) * glm::vec3(amplitude);
+			camera.transform.Offset_Local_Position(direction);
+		}
+
+		void Relative_Move(glm::vec3 direction, float amplitude)
+		{
+			if (direction == glm::vec3(0) || amplitude == 0) return;
+
+			glm::vec3 horizontal_direction = glm::normalize(glm::cross(front, camera.up_direction));
+			glm::vec3 vertical_direction = glm::normalize(glm::cross(front, horizontal_direction));
+			glm::vec3 forward_direction = front;
+
+			horizontal_direction = horizontal_direction * direction.x;
+			vertical_direction = vertical_direction * direction.y ;
+			forward_direction = forward_direction * direction.z;
+			
+			direction = glm::normalize(horizontal_direction + vertical_direction + forward_direction) * amplitude;
+
+			camera.transform.Offset_Local_Position(direction);
+		}
+
+		void Relative_Move_Horizontal(float amount, float amplitude)
+		{
+			
+			camera.transform.Offset_Local_Position(amount * amplitude * glm::normalize(glm::cross(front, camera.up_direction)));
+		}
+
+		void Relative_Move_Vertical(float amount, float amplitude)
+		{
+			camera.transform.Offset_Local_Position(amount * amplitude * glm::normalize(glm::cross(front, glm::normalize(glm::cross(front, camera.up_direction)))));
+		}
+
+		void Rotate(float _yaw, float _pich, float amplitude)
+		{
+			float amp_yaw = _yaw * amplitude;
+			float amp_pitch = _pich * amplitude;
+
+			if (amp_yaw == 0 && amp_pitch == 0) return;
+
+			yaw += amp_yaw;
+			pich += amp_pitch;
+			
+			const float max_pich = 180;
+			if (pich > max_pich)
+				pich = -max_pich + (pich - max_pich);
+
+			if (pich < -max_pich)
+				pich = max_pich + (pich + max_pich);
+			
+			if (pich < -90.f || pich > 90)
+				camera.up_direction = glm::vec3(0,-1,0);
+			else
+				camera.up_direction = glm::vec3(0, 1, 0);
+
+			Update_Camera_Rotation();
+		}
+
+		void Update_Camera_Rotation()
+		{
+			front.x = std::cos(glm::radians(yaw)) * std::cos(glm::radians(pich));
+			front.y = std::sin(glm::radians(pich));
+			front.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pich));
+			
+			camera.transform.Set_Local_Rotation(front);
+		}
+
+		Camera& camera;
+		f32 yaw = 90.0;
+		f32 pich = 0;
+		glm::vec3 front = glm::vec3(0);
+	};
+
 	struct Mesh_Renderer
 	{
-		Mesh_Renderer(Entity entity, Mesh* mesh, Material* material) : mesh(mesh), material(material), transform(entity.Get<Transform>()) {}
+		Mesh_Renderer(Entity entity, Mesh* mesh, Material* material, u32 subpass_index = 0) : mesh(mesh), material(material), transform(entity.Get<Transform>()), subpass_index(subpass_index) {}
 
 		Mesh* mesh = nullptr;
 		Material* material = nullptr;
 		Transform& transform;
+		u32 subpass_index;
 	};
 
 	struct Billboard_Renderer
 	{
-		Billboard_Renderer(Entity entity, Mesh* mesh, Material* material) : mesh(mesh), material(material), transform(entity.Get<Transform>()) {}
+		Billboard_Renderer(Entity entity, Mesh* mesh, Material* material, u32 subpass_index = 1) : mesh(mesh), material(material), transform(entity.Get<Transform>()), subpass_index(subpass_index) {}
 
 		glm::vec3 Position() 
 		{
@@ -181,5 +271,6 @@ namespace Bolt
 		Mesh* mesh = nullptr;
 		Material* material = nullptr;
 		Transform& transform;
+		u32 subpass_index;
 	};
 }

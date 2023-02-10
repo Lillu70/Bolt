@@ -1,33 +1,57 @@
 #pragma once
 #include "Vk_Internal_Components.h"
+#include "../Core/Bolt_Types.h"
 
 namespace Bolt
 {
-	class Vk_Descriptor_Allocator final
+	class Descriptor_Pool_Bucket
 	{
 	public:
-		void Init(VkDevice device, uint32_t frames_in_flight);
+		void Init(VkDevice device, u32 bucket_size, std::vector<VkDescriptorSetLayoutBinding>& layout_bindings, std::vector<VkDescriptorPoolSize>& pool_sizes);
 		void Dest();
 
 		void Allocate(VkDescriptorSet& output_set);
-		void Allocate(Frame_Data& output_frame);
-		VkDescriptorSetLayout Get_Material_Descriptor_Layout();
-		VkDescriptorSetLayout Get_Scene_Descriptor_Layout();
+		
+		VkDescriptorSetLayout Get_Layout() { return m_layout; }
+	
+	private:
+		VkDescriptorPool& Create_Pool();
 
 	private:
-		void Create_Material_Descriptor_Pool();
-
-		void Create_Material_Descriptor_Layout();
-		void Create_Scene_Descriptor_Layout();
-		void Create_Scene_Descriptor_Pool(uint32_t frames_in_flight);
-
-	private:
-		std::vector<VkDescriptorPool> m_material_description_pools;
-		VkDescriptorSetLayout m_material_description_layout;
-		VkDescriptorSetLayout m_scene_ub_layout;
-		VkDescriptorPool m_scene_ub_pool;
-		VkDevice m_device;
+		std::vector<VkDescriptorPoolSize> m_pool_sizes;
+		std::vector<VkDescriptorPool> m_pools;
+		VkDescriptorSetLayout m_layout = VK_NULL_HANDLE;
+		VkDevice m_device = VK_NULL_HANDLE;
+		u32 m_bucket_size = 0;
 	};
+
+	enum class Descriptor_Types
+	{
+		Material,
+		Scene,
+		COUNT,
+	};
+
+	class Vk_Descriptor_Allocator final
+	{
+	public:
+		void Init(VkDevice device, u32 frames_in_flight);
+		void Dest();
+
+		void Allocate(Descriptor_Types type, VkDescriptorSet& output_set);
+		
+		VkDescriptorSetLayout Get_Layout(Descriptor_Types type);
+
+	private:
+		void Init_Material_Pools();
+		void Init_Scene_Pools(u32 frames_in_flight);
+
+	private:
+		std::array<Descriptor_Pool_Bucket, u32(Descriptor_Types::COUNT)> m_descriptors;
+		VkDevice m_device;
+		
+		static constexpr u32 s_bucket_size = 10;
+	};	
 }
 
 

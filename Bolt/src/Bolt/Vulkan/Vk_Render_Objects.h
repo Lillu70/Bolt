@@ -6,11 +6,11 @@ namespace Bolt
 	struct Render_Object_3D_Model
 	{
 		Render_Object_3D_Model() = default;
-		Render_Object_3D_Model(Mesh* mesh, Material* material, glm::mat4* transform) : mesh(mesh), material(material), transform(transform) {}
+		Render_Object_3D_Model(Mesh* mesh, Material* material, const glm::mat4* transform) : mesh(mesh), material(material), transform(*transform) {}
 
 		Mesh* mesh = nullptr;
 		Material* material = nullptr;
-		glm::mat4* transform = nullptr;
+		glm::mat4 transform;
 	};
 
 	struct Render_Object_Billboard
@@ -39,18 +39,10 @@ namespace Bolt
 		float thickness;
 	};
 
-	struct Render_Submission
+	struct Render_Pass_Info
 	{
-		std::vector<Render_Object_3D_Model> m_models_3D;
-		std::vector<Render_Object_Billboard> m_billboards;
-
-		void Clear()
-		{
-			m_models_3D.clear();
-			m_billboards.clear();
-		}
+		Render_Pass* render_pass = nullptr;
+		Scene_Descriptor* scene_descriptor = nullptr;
+		u32 data_id = 0;
 	};
-
-	
 }
-

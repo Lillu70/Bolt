@@ -10,13 +10,15 @@
 
 namespace Bolt
 {
+    typedef std::vector<VkAttachmentDescription> Attachments;
+
     struct Queue_Families
     {
         uint32_t graphics = 0;
         uint32_t present = 0;
     };
 
-    struct Format_Description
+    struct Formats
     {
         VkSurfaceFormatKHR surface;
         VkFormat depth;
@@ -26,7 +28,10 @@ namespace Bolt
     {
         VkPhysicalDevice physical_device = VK_NULL_HANDLE;
         Queue_Families queue_families;
-        Format_Description formats;
+        Formats formats;
+
+        VkFormat Surface() { return formats.surface.format; }
+        VkFormat Depth() { return formats.depth; }
     };
 
     struct Device_Queues
@@ -82,8 +87,6 @@ namespace Bolt
         uint32_t swapchain_image_index = std::numeric_limits<uint32_t>::max();
         Frame_Syncronization sync;
         VkCommandBuffer cmd_buffer = VK_NULL_HANDLE;
-        Buffer_Description camera_buffer;
-        VkDescriptorSet camera_descriptor = VK_NULL_HANDLE;
     };
 
     struct Push_Constant
@@ -92,8 +95,32 @@ namespace Bolt
         glm::mat4 normal_matrix = glm::mat4(1);
     };
 
+    struct Camera_Data
+    {
+        glm::mat4 view = glm::mat4(1);
+        glm::mat4 proj = glm::mat4(1);
+    };
+
+    struct Enviroment_Data
+    {
+        glm::vec3 global_light_direction = glm::vec3(1, 3, 1);
+        glm::vec3 global_light_color = glm::vec3(1);
+        glm::vec3 amplient_color = glm::vec3(0.005, 0.005, 0.005);
+    };
+
     struct Scene_Uniform_Buffer_Object
     {
+        Scene_Uniform_Buffer_Object() = default;
+        Scene_Uniform_Buffer_Object(Camera_Data& camera_data, Enviroment_Data& enviroment_data)
+        {
+            view_proj = camera_data.proj * camera_data.view;
+            //view_proj = camera_data.view * camera_data.proj;
+            inverse_view = glm::inverse(camera_data.view);
+            light_direction = enviroment_data.global_light_direction;
+            light_color = enviroment_data.global_light_color;
+            amplient_color = enviroment_data.amplient_color;
+        }
+
         glm::mat4 inverse_view = glm::mat4(1);
         glm::mat4 view_proj = glm::mat4(1);
         alignas(16) glm::vec3 light_direction = glm::vec3(1);
@@ -206,7 +233,11 @@ namespace Bolt
         }
     };
 
-    
+    enum class Clear_Method
+    {
+        Load,
+        Clear,
+    };
 }
 
 namespace std

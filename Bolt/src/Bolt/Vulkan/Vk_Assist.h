@@ -1,11 +1,15 @@
 #pragma once
 
+#include "../Core/Bolt_Types.h"
+
 #include "Vk_Internal_Components.h"
 
 #include <GLFW/glfw3.h>
 
 namespace Bolt
 {
+    static constexpr u32 MAX_FRAMES_IN_FLIGHT = 2;
+
     class Vk_Util
     {
     public:
@@ -22,10 +26,17 @@ namespace Bolt
         static void Copy_Buffer(VkDevice device, Command_Pools command_pools, Device_Queues device_queues, VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
         static void Copy_Buffer_To_Image(VkDevice device, Command_Pools command_pools, Device_Queues device_queues, VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
         static void Create_Staging_Buffer(VkDevice device, GPU gpu, void* source, VkDeviceSize size, Buffer_Description& output);
-        static void Begin_Command_Buffer(VkCommandBuffer& cmd_buffer);
-        static void Begin_Render_Pass(VkCommandBuffer cmd_buffer, VkRenderPass render_pass, Swapchain_Description& swapchain, uint32_t image_index, glm::vec3& clear_color);
-        static void CMD_Set_View_Port(VkCommandBuffer cmd_buffer, Swapchain_Description& swapchain);
-        static void CMD_Set_Scissors(VkCommandBuffer cmd_buffer, Swapchain_Description& swapchain);
+        static void Write_To_Buffer(VkDevice device, Buffer_Description buffer, VkDeviceSize buffer_size, void* data, u32 buffer_offset = 0);
+
+        static void RCMD_Begin_Command_Buffer(VkCommandBuffer& cmd_buffer);
+        static void RCMD_Begin_Render_Pass(VkCommandBuffer cmd_buffer, VkRenderPass render_pass, VkFramebuffer framebuffer, VkExtent2D extent, glm::vec3 clear_color = glm::vec3(0));
+        static void RCMD_Set_View_Port(VkCommandBuffer cmd_buffer, Swapchain_Description& swapchain);
+        static void RCMD_Set_Scissors(VkCommandBuffer cmd_buffer, Swapchain_Description& swapchain);
+
+        static VkAttachmentDescription Depth_Clear_Attach(Formats format);
+        static VkAttachmentDescription Depth_Load_Attach(Formats format);
+        static VkAttachmentDescription Color_Clear_Attach(Formats format);
+        static VkAttachmentDescription Color_Load_Attach(Formats format);
     };
 
     class Vk_Init
@@ -40,7 +51,8 @@ namespace Bolt
         static void Pick_Physical_Device(VkInstance instance, VkSurfaceKHR surface_example, GPU& output);
         static void Create_Logical_Device(GPU gpu, VkDevice& output);
         static void Retrive_Device_Queues(VkDevice device, Queue_Families queue_families, Device_Queues& output);
-        static void Create_Render_Pass(VkDevice device, Format_Description formats, VkRenderPass& output);
+        static void Create_Render_Pass(VkDevice device, Formats formats, VkRenderPass& output);
+        static void Create_Render_Pass(VkDevice device, const std::vector<VkAttachmentDescription>& color_attachments, std::optional<VkAttachmentDescription> depth_attachment, VkRenderPass& output);
         static void Create_Descriptor_Set_Layout(VkDevice device, const std::vector<VkDescriptorSetLayoutBinding>& layout_bindings, VkDescriptorSetLayout& output);
         static void Create_Graphics_Pipline_Layout(VkDevice device, const std::vector<VkDescriptorSetLayout>& descriptor_set_layouts, VkPipelineLayout& output, std::optional<VkPushConstantRange> push_constant = std::optional<VkPushConstantRange>());
         static void Create_Graphics_Pipeline(VkDevice device, VkPipelineLayout layout, VkRenderPass render_pass, Shader_Modules shaders, VkPipeline& output);
@@ -50,7 +62,8 @@ namespace Bolt
         //Window level resources:
         static void Create_Swapchain(VkDevice device, GPU gpu, VkSurfaceKHR surface, GLFWwindow* window, Swapchain_Description& output);
         static void Create_Depth_Resources(VkDevice device, GPU gpu, Swapchain_Description swapchain, Command_Pools command_pools, Device_Queues device_queues, Image_Description& output);
-        static void Create_Framebuffer(VkDevice device, VkRenderPass render_pass, Image_Description depth_image, Swapchain_Description& output);
+        static void Create_Framebuffers(VkDevice device, VkRenderPass render_pass, Image_Description depth_image, Swapchain_Description& output);
+     
         static void Create_Descriptor_Pool(VkDevice device, VkDescriptorSetLayout layout, const std::vector<VkDescriptorPoolSize>& pool_sizes, uint32_t descriptor_count, VkDescriptorPool& output);
         static void Create_Command_Buffers(VkDevice device, Command_Pools pools, uint32_t buffer_count, std::vector<VkCommandBuffer>& output);
         static void Create_Frame_Syncronization_Objects(VkDevice device, Frame_Syncronization& output);
@@ -78,4 +91,3 @@ namespace Bolt
         static void Destroy_Debug_Utils_Messenger(VkInstance instance, VkDebugUtilsMessengerEXT debug_messenger, const VkAllocationCallbacks* allocator_ptr);
     };
 }
-

@@ -8,13 +8,11 @@ Bolt::Vk_Renderer::Vk_Renderer(GLFWwindow* window) : m_window(window)
 	Init();
 }
 
-
 Bolt::Vk_Renderer::~Vk_Renderer()
 {
 	m_descriptors.Dest();
 	Dest();
 }
-
 
 void Bolt::Vk_Renderer::Init()
 {
@@ -33,18 +31,17 @@ void Bolt::Vk_Renderer::Init()
 	Vk_Init::Pick_Physical_Device(m_instance, m_surface, m_gpu);
 	Vk_Init::Create_Logical_Device(m_gpu, m_device);
 	Vk_Init::Retrive_Device_Queues(m_device, m_gpu.queue_families, m_device_queues);
-	Vk_Init::Create_Render_Pass(m_device, m_gpu.formats, m_render_pass);
 	Vk_Init::Create_Command_Pools(m_device, m_gpu.queue_families, m_command_pools);
 	Vk_Init::Create_Texture_Sampler(m_device, m_gpu, m_sampler);
 	Vk_Init::Create_Swapchain(m_device, m_gpu, m_surface, m_window, m_swapchain);
 	Vk_Init::Create_Depth_Resources(m_device, m_gpu, m_swapchain, m_command_pools, m_device_queues, m_depth_image);
-	Vk_Init::Create_Framebuffer(m_device, m_render_pass, m_depth_image, m_swapchain);
+	Vk_Init::Create_Render_Pass(m_device, m_gpu.formats, m_dummy_render_pass);
+	Vk_Init::Create_Framebuffers(m_device, m_dummy_render_pass, m_depth_image, m_swapchain);
 	
 	m_descriptors.Init(m_device, MAX_FRAMES_IN_FLIGHT);
-	Create_Graphics_Pipeline_Layout({ m_descriptors.Get_Scene_Descriptor_Layout(), m_descriptors.Get_Material_Descriptor_Layout() });
+	Create_Graphics_Pipeline_Layout({ m_descriptors.Get_Layout(Descriptor_Types::Scene), m_descriptors.Get_Layout(Descriptor_Types::Material) });
 	Init_Per_Frame_Data();
 	Create_Default_Resources();
-	Calculate_Projection_Matrix();
 }
 
 void Bolt::Vk_Renderer::Init_Per_Frame_Data()
@@ -54,29 +51,18 @@ void Bolt::Vk_Renderer::Init_Per_Frame_Data()
 	for (uint32_t i = 0; i < m_frame_data.size(); i++)
 		m_frame_data[i].cmd_buffer = cmd_buffers[i];
 
-	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
-	VkDeviceSize buffer_size = sizeof(Scene_Uniform_Buffer_Object);
-
 	for (auto& frame : m_frame_data)
-	{
 		Vk_Init::Create_Frame_Syncronization_Objects(m_device, frame.sync);
-		Vk_Util::Create_Buffer(m_device, m_gpu, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, properties, buffer_size, frame.camera_buffer);
-		m_descriptors.Allocate(frame);
-	}
 }
-
 
 void Bolt::Vk_Renderer::Dest()
 {
 	vkDeviceWaitIdle(m_device);
-	//Cleanup after the GPU returns idle.
 
-	//Cleanup default resources.
 	Destory_Default_Resources();
 
 	vkDestroyPipelineLayout(m_device, m_pipeline_layout, nullptr);
 
-	//Cleanup vulkan it self.
 	Vk_Dest::Clear_Image(m_device, m_depth_image);
 	Vk_Dest::Clear_Swapchain(m_device, m_swapchain);
 
@@ -85,7 +71,7 @@ void Bolt::Vk_Renderer::Dest()
 
 	vkDestroySampler(m_device, m_sampler, nullptr);
 
-	vkDestroyRenderPass(m_device, m_render_pass, nullptr);
+	vkDestroyRenderPass(m_device, m_dummy_render_pass, nullptr);
 
 	vkDestroyCommandPool(m_device, m_command_pools.reset, nullptr);
 	vkDestroyCommandPool(m_device, m_command_pools.transient, nullptr);
@@ -101,41 +87,37 @@ void Bolt::Vk_Renderer::Dest()
 }
 
 
-void Bolt::Vk_Renderer::Draw_Frame(glm::vec3 clear_color)
+void Bolt::Vk_Renderer::Draw_Frame(Render_Submissions& submissions, glm::vec3 clear_color)
 {
 	Frame_Data& frame = m_frame_data[m_current_frame];
 
 	vkWaitForFences(m_device, 1, &frame.sync.render_fence, VK_TRUE, UINT64_MAX);
 
 	if (Acquire_Image_From_Swapchain(frame) == false)
-	{
-		m_submissions.clear();
 		return;
-	}
-
+	
 	//Only reset the fence if we are submitting work.
 	vkResetFences(m_device, 1, &frame.sync.render_fence);
 
 	//Alias for cleaner code.
 	VkCommandBuffer& cmd_buffer = frame.cmd_buffer;
+	VkFramebuffer& framebuffer = m_swapchain.framebuffers[frame.swapchain_image_index];
 	vkResetCommandBuffer(cmd_buffer, 0);
 
 	// ---- Rendering Work Starts Here ---- //
-	Update_Unifrom_Buffer(frame);
+	Vk_Util::RCMD_Begin_Command_Buffer(cmd_buffer);
+	
+	Vk_Util::RCMD_Set_View_Port(cmd_buffer, m_swapchain);
+	Vk_Util::RCMD_Set_Scissors(cmd_buffer, m_swapchain);
 
-	Vk_Util::Begin_Command_Buffer(cmd_buffer);
-	Vk_Util::Begin_Render_Pass(cmd_buffer, m_render_pass, m_swapchain, frame.swapchain_image_index, clear_color);
+	if (submissions.Activate_First_Pass()) 
+	{
+		Beging_First_Pass(submissions, frame, cmd_buffer, framebuffer, clear_color);	
 
-	Vk_Util::CMD_Set_View_Port(cmd_buffer, m_swapchain);
-	Vk_Util::CMD_Set_Scissors(cmd_buffer, m_swapchain);
+		while (!submissions.Activate_Next_Pass())
+			Beging_Secondary_Pass(submissions, frame, cmd_buffer, framebuffer, clear_color);
+	}
 
-	//Bind per frame descriptor.
-	vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &frame.camera_descriptor, 0, nullptr);
-
-	//The actual draw calls!
-	Draw_Submissions(cmd_buffer);
-
-	vkCmdEndRenderPass(cmd_buffer);
 	if (vkEndCommandBuffer(cmd_buffer) != VK_SUCCESS)
 		ERROR("failed to record command buffer!");
 	// ----  Rendering Work Ends Here  ---- //
@@ -144,18 +126,56 @@ void Bolt::Vk_Renderer::Draw_Frame(glm::vec3 clear_color)
 	Present_To_Surface(frame);
 
 	m_current_frame = (m_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
-
-	m_submissions.clear();
 }
 
-
-void Bolt::Vk_Renderer::Draw_Submissions(VkCommandBuffer& cmd_buffer)
+void Bolt::Vk_Renderer::Beging_Secondary_Pass(Bolt::Render_Submissions& submissions, Bolt::Frame_Data& frame, VkCommandBuffer& cmd_buffer, VkFramebuffer& framebuffer, glm::vec3& clear_color)
 {
-	for (const Render_Submission* submission : m_submissions)
+	Pass_Submissions& active_pass = submissions.Active_Pass();
+
+	Scene_Descriptor* scene_descriptor = active_pass.info.scene_descriptor;
+	if (scene_descriptor)
 	{
-		Draw_Model_3D(&submission->m_models_3D, cmd_buffer);
-		Draw_Billboard(&submission->m_billboards, cmd_buffer);
+		scene_descriptor->Update(m_current_frame);
+		VkDescriptorSet descriptor = scene_descriptor->pfd[m_current_frame].descriptor_set;
+		if (descriptor != VK_NULL_HANDLE)
+			vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &descriptor, 0, nullptr);
 	}
+
+	Draw_Render_Pass(active_pass, cmd_buffer, framebuffer, clear_color);
+}
+
+void Bolt::Vk_Renderer::Beging_First_Pass(Bolt::Render_Submissions& submissions, Bolt::Frame_Data& frame, VkCommandBuffer& cmd_buffer, VkFramebuffer& framebuffer, glm::vec3& clear_color)
+{
+	Pass_Submissions& active_pass = submissions.Active_Pass();
+
+	Scene_Descriptor* scene_descriptor = active_pass.info.scene_descriptor;
+	if (scene_descriptor == nullptr)
+		ERROR("First pass has to have a valid scene descriptor!");
+
+	scene_descriptor->Update(m_current_frame);
+
+	VkDescriptorSet descriptor = scene_descriptor->pfd[m_current_frame].descriptor_set;
+	if (descriptor == VK_NULL_HANDLE)
+		ERROR("First pass has to have a valid scene descriptor!");
+
+	vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &descriptor, 0, nullptr);
+
+	Draw_Render_Pass(active_pass, cmd_buffer, framebuffer, clear_color);
+}
+
+void Bolt::Vk_Renderer::Draw_Render_Pass(Bolt::Pass_Submissions& active_pass, VkCommandBuffer& cmd_buffer, VkFramebuffer& framebuffer, const glm::vec3& clear_color)
+{
+	VkRenderPass render_pass = active_pass.info.render_pass->renderpass ? active_pass.info.render_pass->renderpass : m_dummy_render_pass;
+
+	Vk_Util::RCMD_Begin_Render_Pass(cmd_buffer, render_pass, framebuffer, m_swapchain.extent, clear_color);
+	Draw_Submissions(cmd_buffer, active_pass);
+	vkCmdEndRenderPass(cmd_buffer);
+}
+
+void Bolt::Vk_Renderer::Draw_Submissions(VkCommandBuffer& cmd_buffer, const Pass_Submissions& submissions)
+{
+	Draw_Model_3D(&submissions.models_3D, cmd_buffer);
+	Draw_Billboard(&submissions.billboards, cmd_buffer);
 }
 
 void Bolt::Vk_Renderer::Draw_Model_3D(const std::vector<Render_Object_3D_Model>* render_set, VkCommandBuffer& cmd_buffer)
@@ -191,7 +211,7 @@ void Bolt::Vk_Renderer::Draw_Model_3D(const std::vector<Render_Object_3D_Model>*
 			vkCmdBindIndexBuffer(cmd_buffer, active_mesh->m_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
 		}
 
-		Push_Constant pc = Create_Push_Constant_3D_Model(*render_obj.transform);
+		Push_Constant pc = Create_Push_Constant_3D_Model(render_obj.transform);
 		vkCmdPushConstants(cmd_buffer, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Bolt::Push_Constant), &pc);
 
 		vkCmdDrawIndexed(cmd_buffer, active_mesh->m_index_count, 1, 0, 0, 0);
@@ -237,43 +257,6 @@ void Bolt::Vk_Renderer::Draw_Billboard(const std::vector<Render_Object_Billboard
 		vkCmdDrawIndexed(cmd_buffer, active_mesh->m_index_count, 1, 0, 0, 0);
 	}
 }
-
-
-void Bolt::Vk_Renderer::Submit(const Render_Submission& submissions)
-{
-	m_submissions.push_back(&submissions);
-}
-
-
-Bolt::Enviroment_Data& Bolt::Vk_Renderer::Get_Enviroment_Data_Ref()
-{
-	return m_enviroment_data;
-}
-
-
-void Bolt::Vk_Renderer::Set_Viewport_Matrix(glm::mat4 tranform)
-{
-	m_view = tranform;
-}
-
-
-void Bolt::Vk_Renderer::Set_Global_Light_Source_Direction(glm::vec3 light_direction)
-{
-	m_enviroment_data.global_light_direction = light_direction;
-}
-
-
-void Bolt::Vk_Renderer::Set_Global_Light_Source_Color(glm::vec3 light_color)
-{
-	m_enviroment_data.global_light_color = light_color;
-}
-
-
-void Bolt::Vk_Renderer::Set_Ambient_Color(glm::vec3 color)
-{
-	m_enviroment_data.amplient_color = color;
-}
-
 
 void Bolt::Vk_Renderer::Load_Texture(const char* file_path, Texture& output_texture)
 {
@@ -355,7 +338,7 @@ void Bolt::Vk_Renderer::Create_Material(const Material_Properties& properties, c
 	ASSERT(output_material.m_material_buffer.handle == VK_NULL_HANDLE, "Material buffer already created!");
 	ASSERT(output_material.m_material_buffer.memory == VK_NULL_HANDLE, "Material buffer memory already allocated!");
 
-	m_descriptors.Allocate(output_material.m_descriptor_set);
+	m_descriptors.Allocate(Descriptor_Types::Material, output_material.m_descriptor_set);
 	
 	VkDescriptorImageInfo image_info{};
 	image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -401,7 +384,7 @@ void Bolt::Vk_Renderer::Create_Material(const Material_Properties& properties, c
 	vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
 
 	Raw_Shader* raw_shader = Extract_Raw_Shader(shader);
-	Vk_Init::Create_Graphics_Pipeline(m_device, m_pipeline_layout, m_render_pass, raw_shader->m_shader_modules, output_material.m_pipeline);
+	Vk_Init::Create_Graphics_Pipeline(m_device, m_pipeline_layout, m_dummy_render_pass, raw_shader->m_shader_modules, output_material.m_pipeline);
 }
 
 
@@ -436,6 +419,68 @@ void Bolt::Vk_Renderer::Destroy(Mesh& mesh)
 {
 	Vk_Dest::Clear_Buffer(m_device, mesh.m_index_buffer);
 	Vk_Dest::Clear_Buffer(m_device, mesh.m_vertex_buffer);
+}
+
+void Bolt::Vk_Renderer::Create_Render_Pass(Render_Pass& output, Clear_Method color_clear_method, Clear_Method depth_clear_method)
+{
+	ASSERT(output.renderpass == VK_NULL_HANDLE, "Render pass is already created!");
+
+	Attachments color_attachments;
+	switch (color_clear_method)
+	{
+	case Bolt::Clear_Method::Load:
+		color_attachments.push_back(Vk_Util::Color_Load_Attach(m_gpu.formats));
+		break;
+	case Bolt::Clear_Method::Clear:
+		color_attachments.push_back(Vk_Util::Color_Clear_Attach(m_gpu.formats));
+		break;
+	default:
+		ERROR("Invalid clear method");
+		break;
+	}
+
+	VkAttachmentDescription depth_attachment;
+	switch (depth_clear_method)
+	{
+	case Bolt::Clear_Method::Load:
+		depth_attachment =Vk_Util::Depth_Load_Attach(m_gpu.formats);
+		break;
+	case Bolt::Clear_Method::Clear:
+		depth_attachment = Vk_Util::Depth_Clear_Attach(m_gpu.formats);
+		break;
+	default:
+		ERROR("Invalid clear method");
+		break;
+	}
+
+	Vk_Init::Create_Render_Pass(m_device, color_attachments, depth_attachment, output.renderpass);
+}
+
+void Bolt::Vk_Renderer::Destroy(Render_Pass& render_pass)
+{
+	ASSERT(render_pass.renderpass != VK_NULL_HANDLE, "Render pass is a nullptr");
+	vkDeviceWaitIdle(m_device);
+	vkDestroyRenderPass(m_device, render_pass.renderpass, nullptr);
+}
+
+void Bolt::Vk_Renderer::Create_Scene_Descriptor(Scene_Descriptor& output)
+{
+	output.device = m_device;
+	VkMemoryPropertyFlags properties = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
+
+	for (auto& pfd : output.pfd)
+	{
+		Vk_Util::Create_Buffer(m_device, m_gpu, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, properties, sizeof(Scene_Uniform_Buffer_Object), pfd.buffer);
+		m_descriptors.Allocate(Descriptor_Types::Scene, pfd.descriptor_set);
+	}
+
+	output.Write_Default_Values_Into_All_Descriptors();
+}
+
+void Bolt::Vk_Renderer::Destroy(Scene_Descriptor& scene_descriptor)
+{
+	for (auto& pfd : scene_descriptor.pfd)
+		Vk_Dest::Clear_Buffer(m_device, pfd.buffer);
 }
 
 void Bolt::Vk_Renderer::Create_Default_Resources()
@@ -545,18 +590,8 @@ void Bolt::Vk_Renderer::Recreate_Swapchain()
 
 	Vk_Init::Create_Swapchain(m_device, m_gpu, m_surface, m_window, m_swapchain);
 	Vk_Init::Create_Depth_Resources(m_device, m_gpu, m_swapchain, m_command_pools, m_device_queues, m_depth_image);
-	Vk_Init::Create_Framebuffer(m_device, m_render_pass, m_depth_image, m_swapchain);
-
-	Calculate_Projection_Matrix();
+	Vk_Init::Create_Framebuffers(m_device, m_dummy_render_pass, m_depth_image, m_swapchain);
 }
-
-
-void Bolt::Vk_Renderer::Calculate_Projection_Matrix()
-{
-	m_proj = glm::perspective(glm::radians(75.f), m_swapchain.extent.width / (float)m_swapchain.extent.height, 0.1f, 1000.0f);
-	m_proj[1][1] *= -1;
-}
-
 
 bool Bolt::Vk_Renderer::Acquire_Image_From_Swapchain(Frame_Data& frame)
 {
@@ -623,49 +658,6 @@ void Bolt::Vk_Renderer::Present_To_Surface(const Frame_Data& frame)
 		ERROR("failed to present swap chain image!");
 }
 
-std::array<VkDescriptorSet, 2> Bolt::Vk_Renderer::Descriptor_Sets_To_Bind(Frame_Data& frame, Material* material)
-{
-	std::array<VkDescriptorSet, 2> sets;
-	sets[0] = frame.camera_descriptor;
-	sets[1] = material->m_descriptor_set;
-
-	return sets;
-}
-
-
-void Bolt::Vk_Renderer::Update_Unifrom_Buffer(const Frame_Data& frame)
-{
-	Scene_Uniform_Buffer_Object uniform_buffer_object{};
-	uniform_buffer_object.inverse_view = glm::inverse(m_view);
-	uniform_buffer_object.view_proj = m_proj * m_view;
-	uniform_buffer_object.light_direction = m_enviroment_data.global_light_direction;
-	uniform_buffer_object.light_color = m_enviroment_data.global_light_color;
-	uniform_buffer_object.amplient_color = m_enviroment_data.amplient_color;
-
-	void* maped_memory = nullptr;
-	vkMapMemory(m_device, frame.camera_buffer.memory, 0, sizeof(Scene_Uniform_Buffer_Object), 0, &maped_memory);
-	memcpy(maped_memory, &uniform_buffer_object, sizeof(uniform_buffer_object));
-	vkUnmapMemory(m_device, frame.camera_buffer.memory);
-
-	VkDescriptorBufferInfo buffer_info;
-	buffer_info.buffer = frame.camera_buffer.handle;
-	buffer_info.offset = 0;
-	buffer_info.range = sizeof(Scene_Uniform_Buffer_Object);
-
-	std::array<VkWriteDescriptorSet, 1> writes{};
-
-	writes[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	writes[0].dstSet = frame.camera_descriptor;
-	writes[0].dstBinding = 0;
-	writes[0].dstArrayElement = 0;
-	writes[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	writes[0].descriptorCount = 1;
-	writes[0].pBufferInfo = &buffer_info;
-
-	vkUpdateDescriptorSets(m_device, static_cast<uint32_t>(writes.size()), writes.data(), 0, nullptr);
-}
-
-
 VKAPI_ATTR VkBool32 VKAPI_CALL Bolt::Vk_Renderer::Debug_Callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, VkDebugUtilsMessageTypeFlagsEXT message_type, const VkDebugUtilsMessengerCallbackDataEXT* callback_data_ptr, void* user_data_ptr)
 {
 	if (message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
@@ -674,7 +666,6 @@ VKAPI_ATTR VkBool32 VKAPI_CALL Bolt::Vk_Renderer::Debug_Callback(VkDebugUtilsMes
 	return VK_FALSE;
 }
 
-
 void Bolt::Vk_Renderer::On_Framebuffer_Resize_Callback(GLFWwindow* window, int width, int height)
 {
 	Vk_Renderer* instance = (Vk_Renderer*)(glfwGetWindowUserPointer(window));
@@ -682,7 +673,6 @@ void Bolt::Vk_Renderer::On_Framebuffer_Resize_Callback(GLFWwindow* window, int w
 	instance->m_framebuffer_size.x = width;
 	instance->m_framebuffer_size.y = height;
 }
-
 
 GLFWwindow* Bolt::Create_GLFW_Window(glm::u32vec2 dimensions, const char* title)
 {

@@ -1,12 +1,12 @@
 #pragma once
 
 #include "Assets_Resource_Injector.h"
+#include "Bolt_Types.h"
 #include "Obj_Loader.h"
 #include "Assert.h"
 
 #include <unordered_map>
 #include <string>
-
 
 namespace Bolt
 {
@@ -26,18 +26,21 @@ namespace Bolt
 		Texture* Texture(const std::string& texture_path);
 
 		Material* Material(const std::string& material_name);
+
+		//Create calls.
+	public:
+		Scene_Descriptor* Create_Scene_Descriptor(u32 main_pass_index, u32 subpass_index);
+
+		Render_Pass* Create_Render_Pass(u32 main_pass_index, u32 subpass_index, Clear_Method color_clear, Clear_Method depth_clear);
 		
 		void Create_Material(const std::string& material_name, Material_Properties properties, Bolt::Texture* texture, Bolt::Shader shader = {});
+		
 		void Create_Shader(const std::string& name, const std::string& frag_path, const std::string& vert_path);
 
 	private:
-		
-
-	private:
 		void Push_Mesh(const std::string& name, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices) override;
-	
-		void Push_Material(const std::string& model_name, const std::string& material_name, Material_Data& material_data) override;
 		
+		void Push_Material(const std::string& model_name, const std::string& material_name, Material_Data& material_data) override;
 
 	private:
 		Resource_Factory* m_renderer_resource_factory;
@@ -52,6 +55,9 @@ namespace Bolt
 		std::unordered_map<std::string, Bolt::Material>		m_material_map;
 		std::unordered_map<std::string, Bolt::Texture>		m_texture_map;
 		std::unordered_map<std::string, Bolt::Raw_Shader>	m_shader_map;
+		std::unordered_map<u32, Bolt::Render_Pass>			m_render_pass_map;
+		std::unordered_map<u32, Bolt::Scene_Descriptor>		m_scene_descriptor_map;
+		
 		std::unordered_map<std::string, std::vector<std::pair<std::string, std::string>>> m_model_map;
 	};
 }

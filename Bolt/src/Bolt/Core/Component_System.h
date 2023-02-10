@@ -130,6 +130,16 @@ namespace Bolt
 			return *element;
 		}
 
+		Entity_ID Get_Entity_ID(T* element)
+		{
+			ASSERT(element, "Entity pointer is a nullptr!");
+			auto iterator = m_id_map.find(element);
+			if (iterator != m_id_map.end())
+				return iterator->second;
+
+			ERROR("Element does not have an entity ID!");
+		}
+
 	private:
 		CMPT_Bucket<T>& Top_Bucket() { return *m_buckets.back(); }
 		void Create_New_Bucket() { m_buckets.push_back(new CMPT_Bucket<T>()); }
@@ -160,6 +170,9 @@ namespace Bolt
 	public:
 		template<typename T>
 		const std::vector<T*>& Components() { return Pool<T>().Components(); }
+
+		template<typename T>
+		Entity_ID Get_Entity_ID(T* element) { return Pool<T>().Get_Entity_ID(element); }
 
 	private:
 		template<typename T>
@@ -194,6 +207,8 @@ namespace Bolt
 		template<typename T>
 		T& Get() { return Pool<T>().Get(m_id); }
 
+		Entity_ID ID() { return m_id; }
+
 	private:
 		template<typename T>
 		CMPT_Pool<T>& Pool() 
@@ -215,6 +230,7 @@ namespace Bolt
 		Entity_Dispatcher(CMPT_Pools& pools) : m_pools(pools) {}
 
 		Entity Create() { return Entity(m_next_id++, &m_pools); }
+		Entity Create(Entity_ID id) { return Entity(id, &m_pools); };
 		void Create(Entity& entity) { entity.m_id = m_next_id++; entity.m_pools = &m_pools; };
 
 	private:

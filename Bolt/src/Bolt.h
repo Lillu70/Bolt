@@ -1,6 +1,7 @@
 #pragma once
 
 // For use by Bolt client applications:
+#include "Bolt/Vulkan/Render_Submissions.h"
 #include "Bolt/Core/Application.h"
 #include "Bolt/Core/Layer.h"
 

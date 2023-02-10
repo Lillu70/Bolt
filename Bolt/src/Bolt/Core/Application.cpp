@@ -15,12 +15,10 @@ namespace Bolt
 		m_assets = std::make_unique<Assets>(m_renderer.get());
 	}
 
-
 	Application::~Application()
 	{
 		glfwTerminate();
 	}
-
 
 	void Application::Run()
 	{
@@ -36,20 +34,23 @@ namespace Bolt
 
 			User_Update(m_time_step);
 
+			m_submissions.Activate_First_Pass();
+			
 			for (std::unique_ptr<Layer>& layer : m_layers)
 			{
 				layer->Update(m_time_step);
-				m_renderer->Submit(layer->Get_Render_Submissions());
+				layer->Inject_Render_Submissions();
+				m_submissions.Activate_Next_Main_Pass();
 			}
-
-			m_renderer->Draw_Frame(m_clear_color);
+			
+			m_renderer->Draw_Frame(m_submissions, m_clear_color);
+			m_submissions.Clear();
 
 			Update_Time_Step(frame_timer.Get_Time().As_Seconds());
 		}
 
 		User_App_Exit();
 	}
-
 	
 	void Application::Apply_Init_Params(const App_Init& init_params)
 	{
@@ -59,7 +60,6 @@ namespace Bolt
 		m_window_title = init_params.window_title;
 		glfwSetWindowTitle(m_window, init_params.window_title.c_str());
 	}
-
 
 	void Application::Update_Time_Step(Time frame_time)
 	{
@@ -78,34 +78,19 @@ namespace Bolt
 		}
 	}
 
-
 	Input& Application::Input()
 	{
 		return *(m_input.get());
 	}
-
 
 	Assets& Application::Asset()
 	{
 		return *(m_assets.get());
 	}
 
-
 	Time Application::Time_Step()
 	{
 		return m_time_step;
-	}
-
-
-	void Application::Set_Global_Light_Source_Direction(glm::vec3 new_direction)
-	{
-		m_renderer->Set_Global_Light_Source_Direction(new_direction);
-	}
-
-
-	void Application::Set_Viewport_Matrix(glm::mat4 new_matrix)
-	{
-		m_renderer->Set_Viewport_Matrix(new_matrix);
 	}
 
 	void Application::Push_Layer(std::unique_ptr<Layer> layer)
@@ -114,9 +99,18 @@ namespace Bolt
 		auto& _layer = m_layers.emplace_back(std::move(layer));
 		_layer->m_assets = m_assets.get();
 		_layer->m_input = m_input.get();
+		_layer->m_render_submissions = &m_submissions;
+		_layer->m_layer_index = u32(m_layers.size()) - 1;
+		_layer->m_extent_ptr = m_renderer->Swapchain_Extent();
+		
+		Render_Pass_Info pass_info;
+		Clear_Method color_clear_method = _layer->m_layer_index == 0? Clear_Method::Clear: Clear_Method::Load;
+		pass_info.render_pass = Asset().Create_Render_Pass(m_submissions.Main_Pass_Count(), 0, color_clear_method, Clear_Method::Clear);
+		pass_info.scene_descriptor = Asset().Create_Scene_Descriptor(m_submissions.Main_Pass_Count(), 0);
+		pass_info.data_id = _layer->Create_Camera_And_Env_Data_Entity();
+		
+		m_submissions.Push_New_Main_Pass(pass_info);
+		m_submissions.Activate_Last_Main_Pass();
 		_layer->Initialize();
 	}
 }
-
-
-
