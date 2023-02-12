@@ -3,7 +3,7 @@
 
 void Sandbox::User_Initialize(Bolt::App_Init& init_params)
 {
-	init_params.clear_color = glm::vec3(0.1f, 0.01f, 0.01f);
+	init_params.clear_color = glm::vec3(0.01f, 0.01f, 0.01f);
 	Push_Layer(std::make_unique<Test_Layer>());
 }
 

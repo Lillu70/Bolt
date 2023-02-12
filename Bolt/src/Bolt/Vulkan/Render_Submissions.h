@@ -16,11 +16,13 @@ namespace Bolt
 		Render_Pass_Info info;
 
 		std::vector<Render_Object_3D_Model> models_3D;
+		std::vector<Render_Object_3D_Model> transparent_models_3D;
 		std::vector<Render_Object_Billboard> billboards;
 
 		void Clear()
 		{
 			models_3D.clear();
+			transparent_models_3D.clear();
 			billboards.clear();
 		}
 	};
@@ -45,7 +47,7 @@ namespace Bolt
 		bool Activate_First_Pass();
 		bool Activate_Last_Main_Pass();
 		void Set_Active_Subpass(u32 index);
-		u32 Active_Subpass_Index() const;
+		u32 Get_Active_Subpass_Index() const;
 
 		//Pass creation calls.
 	public:

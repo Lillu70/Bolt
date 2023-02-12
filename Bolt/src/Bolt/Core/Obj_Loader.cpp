@@ -226,6 +226,24 @@ void Bolt::Obj_Loader::Load_mtl(const std::string& model_name, const std::string
             continue;
         }
 
+        //transparensy
+        if (word == "d")
+        {
+            char new_line = '\n';
+            hit = Parsing::Read_Until_Delim(file, word, &new_line);
+            material_data.transparensy = std::stof(word);
+            continue;
+        }
+
+        //1 - transparensy
+        if (word == "Tr")
+        {
+            char new_line = '\n';
+            hit = Parsing::Read_Until_Delim(file, word, &new_line);
+            material_data.transparensy = 1.f - std::stof(word);
+            continue;
+        }
+
         if (word == "map_Kd") //diffuse texture.
         {
             char new_line = '\n';

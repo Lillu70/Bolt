@@ -7,7 +7,10 @@ Bolt::Render_Submissions::Render_Submissions()
 
 void Bolt::Render_Submissions::Submit_3D_Model(Mesh* mesh, Material* material, const glm::mat4* matrix)
 {
-	Active_Pass().models_3D.emplace_back(mesh, material, matrix);
+	if (material->Has_Transparensy())
+		Active_Pass().transparent_models_3D.emplace_back(mesh, material, matrix);
+	else
+		Active_Pass().models_3D.emplace_back(mesh, material, matrix);
 }
 
 void Bolt::Render_Submissions::Submit_Billboard(Mesh* mesh, Material* material, glm::vec3 position, glm::vec2 scale)
@@ -70,7 +73,7 @@ void Bolt::Render_Submissions::Set_Active_Subpass(u32 index)
 	m_active_pass = &subpasses[m_active_subpass_index - 1];
 }
 
-Bolt::u32 Bolt::Render_Submissions::Active_Subpass_Index() const
+Bolt::u32 Bolt::Render_Submissions::Get_Active_Subpass_Index() const
 {
 	return m_active_subpass_index;
 }

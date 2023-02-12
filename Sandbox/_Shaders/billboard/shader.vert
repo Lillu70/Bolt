@@ -2,7 +2,7 @@
 
 layout(binding = 0) uniform UniformBufferObject {
 	mat4 inverse_view;
-	mat4 view_proj;
+	mat4 proj_view;
 	vec3 light_direction;
 	vec3 light_color;
 	vec3 ambient_color;
@@ -34,7 +34,7 @@ void main()
 	vec3 world_position = pc.model_center[0].xyz + camera_right_worldspace * in_offset.x * pc.model_center[1][0] + camera_up_worldspace * in_offset.y * pc.model_center[1][1];
 
 	out_frag_world_position = world_position;
-	gl_Position = ub.view_proj * vec4(world_position, 1.0);
+	gl_Position = ub.proj_view * vec4(world_position, 1.0);
 	out_frag_world_normal = normalize(mat3(pc.normal_matrix) * in_normal);
 	out_frag_tex_coord = in_tex_coord;
 }

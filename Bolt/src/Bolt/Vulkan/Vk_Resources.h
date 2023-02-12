@@ -26,7 +26,12 @@ namespace Bolt
 		{
 			Specular,
 			Billboard,
+			Diffuse,
 		};
+
+		#define SHADER_DEF_SPECULAR Bolt::Shader::Defaults::Specular
+		#define SHADER_DEF_BILLBOARD Bolt::Shader::Defaults::Billboard
+		#define SHADER_DEF_DIFFUSE Bolt::Shader::Defaults::Diffuse
 
 		Shader() = default;
 
@@ -49,18 +54,26 @@ namespace Bolt
 		Raw_Shader* custom = nullptr;
 	};
 
-#define SHADER_DEF_SPECULAR Bolt::Shader::Defaults::Specular
-#define SHADER_DEF_BILLBOARD Bolt::Shader::Defaults::Billboard
-
-
 	struct Image_Data
 	{
 		int32_t width = 0;
 		int32_t height = 0;
 		int32_t channels = 0;
 		unsigned char* pixels = nullptr;
-
 		void Free();
+
+		bool Is_Transparent()
+		{
+			/*
+			N=#comp     components
+			1           grey
+			2           grey, alpha
+			3           red, green, blue
+			4           red, green, blue, alpha
+			*/
+
+			return channels == 2 || channels == 4;
+		}
 	};
 
 	struct Texture
@@ -72,17 +85,21 @@ namespace Bolt
 
 	private:
 		Image_Description m_image;
+		bool has_transparensy = false;
 	};
 
 	struct Material
 	{
 		friend Vk_Renderer;
 
+		bool Has_Transparensy() { return has_transparency; }
+
 	private:
 		VkDescriptorSet m_descriptor_set = VK_NULL_HANDLE;
 		VkPipeline m_pipeline = VK_NULL_HANDLE;
 
 		Buffer_Description m_material_buffer;
+		bool has_transparency = false;
 	};
 
 	struct Mesh

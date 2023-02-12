@@ -1,7 +1,7 @@
-# Blender 3.1.0 MTL File: 'untitled.blend'
+# Blender 3.1.0 MTL File: 'SPEEDSTERR.blend'
 # www.blender.org
 
-newmtl Chrome
+newmtl Chrome.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -10,9 +10,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 3
-map_Kd  Image_3.png
+map_Kd  Chrome_baseColor.png
 
-newmtl Emissive_SPEEDSTERLights
+newmtl Emissive_SPEEDSTERLights.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -21,9 +21,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd  Image_4.png
+map_Kd  Emissive_SPEEDSTERLights_baseColor.png
 
-newmtl Emissive_SPEEDSTERMisc
+newmtl Emissive_SPEEDSTERMisc.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -32,9 +32,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd  Image_6.png
+map_Kd  Matte_SPEEDSTERMisc_baseColor.png
 
-newmtl Glass_SPEEDSTERBlack
+newmtl Glass_SPEEDSTERBlack.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -43,9 +43,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd  Image_0.png
+map_Kd  Matte_SPEEDSTERBlack_baseColor.png
 
-newmtl Glass_SPEEDSTERGlass
+newmtl Glass_SPEEDSTERGlass.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -54,10 +54,10 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd  Image_7.png
-map_d  Image_7.png
+map_Kd  Glass_SPEEDSTERGlass_baseColor.png
+map_d  Glass_SPEEDSTERGlass_baseColor.png
 
-newmtl Matte_SPEEDSTERBlack
+newmtl Matte_SPEEDSTERBlack.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -66,9 +66,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd  Image_5.png
+map_Kd  Matte_SPEEDSTERBlack_baseColor.png
 
-newmtl Matte_SPEEDSTERBumperChassis
+newmtl Matte_SPEEDSTERBumperChassis.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -77,9 +77,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 3
-map_Kd  Image_8.png
+map_Kd  Matte_SPEEDSTERBumperChassis_baseColor.png
 
-newmtl Matte_SPEEDSTEREngine
+newmtl Matte_SPEEDSTEREngine.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -88,9 +88,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 3
-map_Kd  Image_9.png
+map_Kd  Matte_SPEEDSTEREngine_baseColor.png
 
-newmtl Matte_SPEEDSTERFrontBay
+newmtl Matte_SPEEDSTERFrontBay.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -99,19 +99,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 3
-map_Kd  Image_10.png
+map_Kd  Matte_SPEEDSTERFrontBay_baseColor.png
 
-newmtl Matte_SPEEDSTERMisc
-Ns 250.000000
-Ka 1.000000 1.000000 1.000000
-Kd 1.000000 1.000000 1.000000
-Ks 0.500000 0.500000 0.500000
-Ke 0.000000 0.000000 0.000000
-Ni 1.450000
-d 1.000000
-illum 2
-
-newmtl Matte_SPEEDSTERRim
+newmtl Matte_SPEEDSTERMisc.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -120,41 +110,20 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd  Image_11.png
+map_Kd  Matte_SPEEDSTERMisc_baseColor.png
 
-newmtl Matte_SPEEDSTERUnderside
+newmtl Matte_SPEEDSTERRim.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
-Ks 0.500000 0.500000 0.500000
-Ke 0.000000 0.000000 0.000000
-Ni 1.450000
-d 1.000000
-illum 3
-map_Kd  Image_5.png
-
-newmtl Mirror_CHROME
-Ns 250.000000
-Ka 1.000000 1.000000 1.000000
-Kd 0.800000 0.800000 0.800000
-Ks 0.500000 0.500000 0.500000
-Ke 0.000000 0.000000 0.000000
-Ni 1.450000
-d 1.000000
-illum 3
-map_Kd  Image_3.png
-
-newmtl Rim_SPEEDSTERRim
-Ns 250.000000
-Ka 1.000000 1.000000 1.000000
-Kd 1.000000 1.000000 1.000000
 Ks 0.500000 0.500000 0.500000
 Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
+map_Kd  Matte_SPEEDSTERRim_baseColor.png
 
-newmtl Shiny_SPEEDSTERMisc
+newmtl Matte_SPEEDSTERUnderside.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -163,9 +132,42 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 3
-map_Kd  Image_6.png
+map_Kd  Matte_SPEEDSTERUnderside_baseColor.png
 
-newmtl SimpleMetal_SPEEDSTERMisc
+newmtl Mirror_CHROME.002
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 3
+map_Kd  Chrome_baseColor.png
+
+newmtl Rim_SPEEDSTERRim.002
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd  Matte_SPEEDSTERRim_baseColor.png
+
+newmtl Shiny_SPEEDSTERMisc.002
+Ns 250.000000
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 3
+map_Kd  Matte_SPEEDSTERMisc_baseColor.png
+
+newmtl SimpleMetal_SPEEDSTERMisc.002
 Ns 250.000000
 Ka 0.500000 0.500000 0.500000
 Kd 0.800000 0.800000 0.800000
@@ -174,9 +176,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 3
-map_Kd  Image_6.png
+map_Kd  Matte_SPEEDSTERMisc_baseColor.png
 
-newmtl Skin
+newmtl Skin.002
 Ns 1000.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -185,9 +187,9 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd  Image_1.png
+map_Kd  Skin_baseColor.png
 
-newmtl Transparent_SPEEDSTERBrakedisc
+newmtl Transparent_SPEEDSTERBrakedisc.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -196,10 +198,10 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd  Image_12.png
-map_d  Image_12.png
+map_Kd  Transparent_SPEEDSTERBrakedisc_baseColor.png
+map_d  Transparent_SPEEDSTERBrakedisc_baseColor.png
 
-newmtl Transparent_SPEEDSTERGrillTransparent
+newmtl Transparent_SPEEDSTERGrillTransparent.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -208,10 +210,10 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd  Image_2.png
-map_d  Image_2.png
+map_Kd  Transparent_SPEEDSTERGrillTransparent_baseColor.png
+map_d  Transparent_SPEEDSTERGrillTransparent_baseColor.png
 
-newmtl Transparent_SPEEDSTERMisc
+newmtl Transparent_SPEEDSTERMisc.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -220,10 +222,10 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd  Image_6.png
-map_d  Image_6.png
+map_Kd  Transparent_SPEEDSTERMisc_baseColor.png
+map_d  Transparent_SPEEDSTERMisc_baseColor.png
 
-newmtl Tyre_SPEEDSTERTire
+newmtl Tyre_SPEEDSTERTire.002
 Ns 250.000000
 Ka 1.000000 1.000000 1.000000
 Kd 0.800000 0.800000 0.800000
@@ -232,4 +234,4 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Kd  Image_13.png
+map_Kd  Tyre_SPEEDSTERTire_baseColor.png

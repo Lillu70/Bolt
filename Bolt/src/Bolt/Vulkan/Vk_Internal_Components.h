@@ -99,6 +99,7 @@ namespace Bolt
     {
         glm::mat4 view = glm::mat4(1);
         glm::mat4 proj = glm::mat4(1);
+        glm::mat4 pos = glm::mat4(0);
     };
 
     struct Enviroment_Data
@@ -113,8 +114,7 @@ namespace Bolt
         Scene_Uniform_Buffer_Object() = default;
         Scene_Uniform_Buffer_Object(Camera_Data& camera_data, Enviroment_Data& enviroment_data)
         {
-            view_proj = camera_data.proj * camera_data.view;
-            //view_proj = camera_data.view * camera_data.proj;
+            proj_view = camera_data.proj * camera_data.view;
             inverse_view = glm::inverse(camera_data.view);
             light_direction = enviroment_data.global_light_direction;
             light_color = enviroment_data.global_light_color;
@@ -122,7 +122,7 @@ namespace Bolt
         }
 
         glm::mat4 inverse_view = glm::mat4(1);
-        glm::mat4 view_proj = glm::mat4(1);
+        glm::mat4 proj_view = glm::mat4(1);
         alignas(16) glm::vec3 light_direction = glm::vec3(1);
         alignas(16) glm::vec3 light_color = glm::vec3(1);
         alignas(16) glm::vec3 amplient_color = glm::vec3(1);
@@ -131,6 +131,7 @@ namespace Bolt
     struct Material_Uniform_Buffer_Object
     {
         float roughness = 32.f;
+        float transparensy = 1.f;
         alignas(16) glm::vec3 diffuse_color = glm::vec3(1);
         alignas(16) glm::vec3 specular_color = glm::vec3(1);
     };
@@ -145,6 +146,7 @@ namespace Bolt
         glm::vec3 diffuse_color = glm::vec3(0);
         glm::vec3 specular_color = glm::vec3(0);
         float specular_exponent = 0;
+        float transparensy = 1.f;
     };
 
     struct Swapchain_Support_Details

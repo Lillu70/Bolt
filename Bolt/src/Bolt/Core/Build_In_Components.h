@@ -173,14 +173,14 @@ namespace Bolt
 	{
 		Camera_Controller(Entity entity) : camera(entity.Get<Camera>()) { Update_Camera_Rotation(); }
 
-		void Move(glm::vec3 direction, float amplitude)
+		void Move(glm::vec3 direction, f32 amplitude)
 		{
 			if (direction == glm::vec3(0) || amplitude == 0) return;
 			direction = glm::normalize(direction) * glm::vec3(amplitude);
 			camera.transform.Offset_Local_Position(direction);
 		}
 
-		void Relative_Move(glm::vec3 direction, float amplitude)
+		void Relative_Move(glm::vec3 direction, f32 amplitude)
 		{
 			if (direction == glm::vec3(0) || amplitude == 0) return;
 
@@ -197,28 +197,17 @@ namespace Bolt
 			camera.transform.Offset_Local_Position(direction);
 		}
 
-		void Relative_Move_Horizontal(float amount, float amplitude)
+		void Rotate(f32 _yaw, f32 _pich, f32 amplitude)
 		{
-			
-			camera.transform.Offset_Local_Position(amount * amplitude * glm::normalize(glm::cross(front, camera.up_direction)));
-		}
-
-		void Relative_Move_Vertical(float amount, float amplitude)
-		{
-			camera.transform.Offset_Local_Position(amount * amplitude * glm::normalize(glm::cross(front, glm::normalize(glm::cross(front, camera.up_direction)))));
-		}
-
-		void Rotate(float _yaw, float _pich, float amplitude)
-		{
-			float amp_yaw = _yaw * amplitude;
-			float amp_pitch = _pich * amplitude;
+			f32 amp_yaw = _yaw * amplitude;
+			f32 amp_pitch = _pich * amplitude;
 
 			if (amp_yaw == 0 && amp_pitch == 0) return;
 
 			yaw += amp_yaw;
 			pich += amp_pitch;
 			
-			const float max_pich = 180;
+			constexpr f32 max_pich = 180;
 			if (pich > max_pich)
 				pich = -max_pich + (pich - max_pich);
 
@@ -248,9 +237,19 @@ namespace Bolt
 		glm::vec3 front = glm::vec3(0);
 	};
 
+	struct Mesh_Renderer_Create_Info
+	{
+		Transform* root = nullptr;
+		u32 render_pass = 1;
+		Shader shader = Shader(SHADER_DEF_DIFFUSE);
+		glm::vec3 position = glm::vec3(0);
+		glm::vec3 rotation = glm::vec3(0);
+		glm::vec3 scale = glm::vec3(0);
+	};
+
 	struct Mesh_Renderer
 	{
-		Mesh_Renderer(Entity entity, Mesh* mesh, Material* material, u32 subpass_index = 0) : mesh(mesh), material(material), transform(entity.Get<Transform>()), subpass_index(subpass_index) {}
+		Mesh_Renderer(Entity entity, Mesh* mesh, Material* material, u32 subpass_index = 1) : mesh(mesh), material(material), transform(entity.Get<Transform>()), subpass_index(subpass_index) {}
 
 		Mesh* mesh = nullptr;
 		Material* material = nullptr;

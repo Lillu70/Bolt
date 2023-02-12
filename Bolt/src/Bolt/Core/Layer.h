@@ -26,12 +26,15 @@ namespace Bolt
 		Entity_ID Create_Camera_And_Env_Data_Entity();
 
 	protected:
-		void Spawn_Entities_From_Model(const std::string& model_path, u32 render_pass = 0, Transform* root = nullptr, glm::vec3 position = glm::vec3(0), glm::vec3 rotation = glm::vec3(0), glm::vec3 scale = glm::vec3(1));
-		void Spawn_Billboards_From_Model(const std::string& model_path, u32 render_pass = 0, Transform* root = nullptr, glm::vec3 position = glm::vec3(0), glm::vec3 rotation = glm::vec3(0), glm::vec3 scale = glm::vec3(1));
+		void Create_Skybox_From_Model(const std::string& model_path, glm::vec3 scale);
+		void Create_Mesh_Renderers_From_Model(const std::string& model_path, Mesh_Renderer_Create_Info create_info);
+		void Spawn_Entities_From_Model(const std::string& model_path, Transform* root = nullptr, glm::vec3 position = glm::vec3(0), glm::vec3 rotation = glm::vec3(0), glm::vec3 scale = glm::vec3(1), u32 render_pass = 1);
+		void Spawn_Billboards_From_Model(const std::string& model_path, Transform* root = nullptr, glm::vec3 position = glm::vec3(0), glm::vec3 rotation = glm::vec3(0), glm::vec3 scale = glm::vec3(1), u32 render_pass = 1);
 
 	protected:
 		Entity Create_Entity();
 		Entity Create_Entity(Entity_ID id);
+		Entity Get_Camera_Entity(u32 index = 0);
 		void Create_Entity(Entity& entity);
 		glm::uvec2 Window_Extent();
 		

@@ -2,7 +2,7 @@
 
 layout(binding = 0) uniform UniformBufferObject {
 	mat4 inverse_view;
-	mat4 view_proj;
+	mat4 proj_view;
 	vec3 light_direction;
 	vec3 light_color;
 	vec3 ambient_color;
@@ -12,7 +12,8 @@ layout(set = 1, binding = 0) uniform sampler2D texSampler;
 
 layout(set = 1, binding = 1) uniform MaterialUniformBufferObject 
 { 
-	float roughness; 
+	float roughness;
+	float transparensy;
 	vec3 diffuse_color;
 	vec3 specular_color;
 } mat_ub;
@@ -38,9 +39,13 @@ void main()
 	blinn_term = pow(blinn_term, mat_ub.roughness);
 
 	//vec3 specular_light = ub.light_color.xyz * blinn_term;
-	vec3 specular_light = specular_color * ub.light_color.xyz * blinn_term;
+	vec3 specular_light = mat_ub.specular_color * ub.light_color.xyz * blinn_term;
 
-	vec3 base_color = mat_ub.diffuse_color * texture(texSampler, fragTexCoord).rgb;
+	vec4 rgba = texture(texSampler, fragTexCoord).rgba;
 
-	outColor = vec4(ub.ambient_color * base_color + base_color * deffuse_light + specular_light, 1.0);
+
+	vec3 base_color = mat_ub.diffuse_color * vec3(rgba);
+
+
+	outColor = vec4(ub.ambient_color * base_color + base_color * deffuse_light + specular_light, rgba[3] * mat_ub.transparensy);
 }

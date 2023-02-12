@@ -89,6 +89,8 @@ void Bolt::Vk_Renderer::Dest()
 
 void Bolt::Vk_Renderer::Draw_Frame(Render_Submissions& submissions, glm::vec3 clear_color)
 {
+	//vkDeviceWaitIdle(m_device);
+
 	Frame_Data& frame = m_frame_data[m_current_frame];
 
 	vkWaitForFences(m_device, 1, &frame.sync.render_fence, VK_TRUE, UINT64_MAX);
@@ -174,11 +176,12 @@ void Bolt::Vk_Renderer::Draw_Render_Pass(Bolt::Pass_Submissions& active_pass, Vk
 
 void Bolt::Vk_Renderer::Draw_Submissions(VkCommandBuffer& cmd_buffer, const Pass_Submissions& submissions)
 {
-	Draw_Model_3D(&submissions.models_3D, cmd_buffer);
-	Draw_Billboard(&submissions.billboards, cmd_buffer);
+	Draw_Render_Objects(&submissions.models_3D, cmd_buffer);
+	Draw_Render_Objects(&submissions.transparent_models_3D, cmd_buffer);
+	Draw_Render_Objects(&submissions.billboards, cmd_buffer);
 }
 
-void Bolt::Vk_Renderer::Draw_Model_3D(const std::vector<Render_Object_3D_Model>* render_set, VkCommandBuffer& cmd_buffer)
+void Bolt::Vk_Renderer::Draw_Render_Objects(const std::vector<Render_Object_3D_Model>* render_set, VkCommandBuffer& cmd_buffer)
 {
 	Material* active_material = nullptr;
 	Mesh* active_mesh = nullptr;
@@ -218,7 +221,7 @@ void Bolt::Vk_Renderer::Draw_Model_3D(const std::vector<Render_Object_3D_Model>*
 	}
 }
 
-void Bolt::Vk_Renderer::Draw_Billboard(const std::vector<Render_Object_Billboard>* render_set, VkCommandBuffer& cmd_buffer)
+void Bolt::Vk_Renderer::Draw_Render_Objects(const std::vector<Render_Object_Billboard>* render_set, VkCommandBuffer& cmd_buffer)
 {
 	Material* active_material = nullptr;
 	Mesh* active_mesh = nullptr;
@@ -268,6 +271,8 @@ void Bolt::Vk_Renderer::Load_Texture(const char* file_path, Texture& output_text
 	//Load the pixel data into host memory.
 	Image_Data img_data = Texture::Load_Image(file_path);
 	ASSERT(img_data.pixels, "Failed to load image '" << file_path << "'\n");
+
+	output_texture.has_transparensy = img_data.Is_Transparent();
 
 	//Upload the pixel data into a GPU staging buffer.
 	Buffer_Description staging_buffer;
@@ -385,6 +390,8 @@ void Bolt::Vk_Renderer::Create_Material(const Material_Properties& properties, c
 
 	Raw_Shader* raw_shader = Extract_Raw_Shader(shader);
 	Vk_Init::Create_Graphics_Pipeline(m_device, m_pipeline_layout, m_dummy_render_pass, raw_shader->m_shader_modules, output_material.m_pipeline);
+
+	output_material.has_transparency = texture.has_transparensy || properties.transparensy < 1;
 }
 
 
@@ -486,6 +493,7 @@ void Bolt::Vk_Renderer::Destroy(Scene_Descriptor& scene_descriptor)
 void Bolt::Vk_Renderer::Create_Default_Resources()
 {
 	Load_Shader("_Shaders/frag.spv", "_Shaders/vert.spv", m_default_shader);
+	Load_Shader("_Shaders/diffuse/frag.spv", "_Shaders/diffuse/vert.spv", m_default_diffuse_shader);
 	Load_Shader("_Shaders/billboard/frag.spv", "_Shaders/billboard/vert.spv", m_default_billboard_shader);
 }
 
@@ -493,6 +501,7 @@ void Bolt::Vk_Renderer::Create_Default_Resources()
 void Bolt::Vk_Renderer::Destory_Default_Resources()
 {
 	Destroy(m_default_shader);
+	Destroy(m_default_diffuse_shader);
 	Destroy(m_default_billboard_shader);
 }
 
@@ -509,8 +518,11 @@ Bolt::Raw_Shader* Bolt::Vk_Renderer::Extract_Raw_Shader(const Shader shader)
 	case Shader::Defaults::Billboard:
 		return &m_default_billboard_shader;
 
+	case Shader::Defaults::Diffuse:
+		return &m_default_diffuse_shader;
+
 	default:
-		ERROR("Unhandeled default!");
+		ERROR("Unhandeled shader default!");
 	}
 }
 

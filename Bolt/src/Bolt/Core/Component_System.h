@@ -137,7 +137,7 @@ namespace Bolt
 			if (iterator != m_id_map.end())
 				return iterator->second;
 
-			ERROR("Element does not have an entity ID!");
+			ERROR("Element is not a valid entity!");
 		}
 
 	private:

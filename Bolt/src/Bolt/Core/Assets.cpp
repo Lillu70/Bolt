@@ -169,6 +169,7 @@ void Bolt::Assets::Push_Material(const std::string& model_name, const std::strin
 	properties.roughness = material_data.specular_exponent;
 	properties.diffuse_color = material_data.diffuse_color;
 	properties.specular_color = material_data.specular_color;
+	properties.transparensy = material_data.transparensy;
 
 	if (material_data.m_deffuse_texture_name == "")
 		material_data.m_deffuse_texture_name = "white.png";

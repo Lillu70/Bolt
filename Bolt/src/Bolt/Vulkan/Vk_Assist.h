@@ -8,7 +8,7 @@
 
 namespace Bolt
 {
-    static constexpr u32 MAX_FRAMES_IN_FLIGHT = 2;
+    static constexpr u32 MAX_FRAMES_IN_FLIGHT = 3;
 
     class Vk_Util
     {

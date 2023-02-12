@@ -69,8 +69,8 @@ namespace Bolt
 		void Draw_Render_Pass(Bolt::Pass_Submissions& active_pass, VkCommandBuffer& cmd_buffer, VkFramebuffer& framebuffer, const glm::vec3& clear_color);
 
 		void Draw_Submissions(VkCommandBuffer& cmd_buffer, const Pass_Submissions& submissions);
-		void Draw_Model_3D(const std::vector<Render_Object_3D_Model>* render_set, VkCommandBuffer& cmd_buffer);
-		void Draw_Billboard(const std::vector<Render_Object_Billboard>* render_set, VkCommandBuffer& cmd_buffer);
+		void Draw_Render_Objects(const std::vector<Render_Object_3D_Model>* render_set, VkCommandBuffer& cmd_buffer);
+		void Draw_Render_Objects(const std::vector<Render_Object_Billboard>* render_set, VkCommandBuffer& cmd_buffer);
 
 		Push_Constant Create_Push_Constant_3D_Model(const glm::mat4& model_transform);
 		Push_Constant Create_Push_Constant_Billboard(const glm::vec3& position, const glm::vec2& scale);
@@ -109,6 +109,7 @@ namespace Bolt
 
 		//default resources
 		Raw_Shader m_default_shader;
+		Raw_Shader m_default_diffuse_shader;
 		Raw_Shader m_default_billboard_shader;
 	};
 }

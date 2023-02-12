@@ -5,21 +5,25 @@ void Test_Layer::Initialize()
 	Bolt::Render_Pass_Info rps;
 	rps.render_pass = Asset().Create_Render_Pass(Layer_Index(), Subpass_Count() + 1, Bolt::Clear_Method::Load, Bolt::Clear_Method::Clear);
 	Push_Rendering_Subpass(rps);
-
-	Create_Entity(player);
 	
-	player.Attach<Bolt::Transform>(glm::vec3(0,0,-5.f));
-	Spawn_Entities_From_Model("Cube.obj", 0, player.Find<Bolt::Transform>());
-	Spawn_Billboards_From_Model("point_light.obj", 1, player.Find<Bolt::Transform>(), glm::vec3(0,5,0));
-	Spawn_Billboards_From_Model("point_light.obj", 1, player.Find<Bolt::Transform>(), glm::vec3(0, 10, 0));
-	Spawn_Billboards_From_Model("point_light.obj", 1, player.Find<Bolt::Transform>(), glm::vec3(0, 15, 0));
-
-	//Spawn_Entities_From_Model("Cube.obj", 0, nullptr, glm::vec3(0, 0, 0), glm::vec3(0, 5, 0), glm::vec3(-3, -3, -3));
-
 	//Reference car!
-	Spawn_Entities_From_Model("SPEEDSTERR.obj", 0);
+	glm::vec3 pos = glm::vec3(0);
+	for (int i = 0; i < 20; i++)
+	{
+		Bolt::Entity ent = Create_Entity();
 
-	camera = Create_Entity(ECS().Get_Entity_ID(ECS().Components<Bolt::Camera>()[0]));
+		ent.Attach<Bolt::Transform>(pos + glm::vec3(0, 0, -5.f));
+		Spawn_Entities_From_Model("Cube.obj", ent.Find<Bolt::Transform>());
+		Spawn_Billboards_From_Model("point_light.obj", ent.Find<Bolt::Transform>(), glm::vec3(0, 5, 0));
+		Spawn_Billboards_From_Model("point_light.obj", ent.Find<Bolt::Transform>(), glm::vec3(0, 10, 0));
+		Spawn_Billboards_From_Model("point_light.obj", ent.Find<Bolt::Transform>(), glm::vec3(0, 15, 0));
+
+		Spawn_Entities_From_Model("SPEEDSTERR.obj", nullptr, pos);
+		pos += glm::vec3(3, 0, 0);
+	}
+	Create_Skybox_From_Model("Skybox.obj", glm::vec3(1));
+
+	camera = Get_Camera_Entity();
 	camera.Attach<Bolt::Camera_Controller>(camera);
 }
 
@@ -66,4 +70,8 @@ void Test_Layer::Update(Bolt::Time time_step)
 	//camera.Get<Bolt::Camera_Controller>().Relative_Move_Vertical(vertical_move, 3 * time_step.As_Seconds());
 	camera.Get<Bolt::Camera_Controller>().Relative_Move(movement, 3 * time_step.As_Seconds());
 	camera.Get<Bolt::Camera_Controller>().Rotate(yaw, pich, 100 * time_step);
+
+	camera.Get<Bolt::Enviroment_Data>().global_light_direction = glm::rotate(camera.Get<Bolt::Enviroment_Data>().global_light_direction, time_step.As_Seconds(), glm::vec3(0, 1, 0));
+
+	
 }
