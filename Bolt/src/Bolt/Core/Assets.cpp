@@ -21,9 +21,10 @@ Bolt::Assets::~Assets()
 		m_renderer_resource_factory->Destroy(scene_descriptor);
 } 
 
-std::vector<std::pair<std::string, std::string>>& Bolt::Assets::Load_Model_File(const std::string& file_path, Bolt::Shader shader)
+std::vector<std::pair<std::string, std::string>>& Bolt::Assets::Load_Model_File(const std::string& file_path, Bolt::Shader shader, bool offset_by_origin)
 {
 	m_active_shader = shader;
+	m_offset_mesh_by_origin = offset_by_origin;
 
 	std::string name, extension;
 	Parsing::Extract_File_Extension_And_Name_From_CSTR(file_path.c_str(), extension, name);
@@ -89,6 +90,8 @@ Bolt::Texture* Bolt::Assets::Texture(const std::string& texture_path)
 
 Bolt::Material* Bolt::Assets::Material(const std::string& material_name)
 {
+	if (material_name == "NONE") return nullptr;
+
 	auto find = m_material_map.find(material_name);
 	if (find != m_material_map.end())
 		return &find->second;
@@ -98,6 +101,15 @@ Bolt::Material* Bolt::Assets::Material(const std::string& material_name)
 	Create_Material(material_name, {}, Texture("white.png"));
 
 	return Material(material_name);
+}
+
+glm::vec3 Bolt::Assets::Mesh_Origin(const std::string& name)
+{
+	auto find = m_mesh_origin_map.find(name);
+	if (find != m_mesh_origin_map.end())
+		return find->second;
+
+	ERROR(std::string("Mesh origin with name [") + name + "] doesn't exists!");
 }
 
 Bolt::Scene_Descriptor* Bolt::Assets::Create_Scene_Descriptor(u32 main_pass_index, u32 subpass_index)
@@ -128,20 +140,23 @@ Bolt::Render_Pass* Bolt::Assets::Create_Render_Pass(u32 main_pass_index, u32 sub
 	return &render_pass;
 }
 
-void Bolt::Assets::Create_Material(const std::string& material_name, Material_Properties properties, Bolt::Texture* texture, Bolt::Shader shader)
+Bolt::Material* Bolt::Assets::Create_Material(const std::string& material_name, Material_Properties properties, Bolt::Texture* texture, Bolt::Shader shader)
 {
 	ASSERT(texture, "Texture is a nullptr");
 
 	auto find = m_material_map.find(material_name);
 	if (find != m_material_map.end())
-		ERROR(std::string("Material with name [") + material_name + "] already exists!");
+		return &find->second;
 
 	Bolt::Material& material = m_material_map[material_name];
 	m_renderer_resource_factory->Create_Material(properties, *texture, material, shader);
+
+	return &material;
 }
 
 void Bolt::Assets::Push_Mesh(const std::string& name, std::vector<Vertex>& vertices, std::vector<uint32_t>& indices)
 {
+	//TRACE(std::string(m_offset_mesh_by_origin ? "Origin AUTO | " : "") + "Loaded Mesh: " + name);
 	ASSERT(!vertices.empty(), "Vertices vector is empty!");
 	ASSERT(!indices.empty(), "Indices vector is empty!");
 
@@ -150,6 +165,14 @@ void Bolt::Assets::Push_Mesh(const std::string& name, std::vector<Vertex>& verti
 	{
 		WARN("Mesh with the name " + name + " already exists");
 		return;
+	}
+	
+	glm::vec3 origin_point = Maths::Calculate_Mesh_Origin(vertices);
+	m_mesh_origin_map[name] = origin_point;
+	if (m_offset_mesh_by_origin)
+	{
+		for (auto& vertex : vertices)
+			vertex.position -= origin_point;
 	}
 
 	Bolt::Mesh& mesh = m_mesh_map[name];

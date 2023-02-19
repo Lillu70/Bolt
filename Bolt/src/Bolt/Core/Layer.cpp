@@ -1,44 +1,80 @@
 #include "Layer.h"
-
+#include "Maths.h"
 
 void Bolt::Layer::Inject_Render_Submissions()
 {
 	Render_Submissions& submissions = *m_render_submissions;
 
-	Update_Scene_Descriptor(submissions);
+	glm::vec3 camera_position;
+	Update_Scene_Descriptor(submissions, camera_position);
 
-	for (auto mesh_renderer : m_components.Components<Mesh_Renderer>())
+	for (auto renderer : m_components.Components<Mesh_Renderer>())
 	{
-		if (submissions.Get_Active_Subpass_Index() != mesh_renderer->subpass_index)
-			submissions.Set_Active_Subpass(mesh_renderer->subpass_index);
+		if (submissions.Get_Active_Subpass_Index() != renderer->subpass_index)
+			submissions.Set_Active_Subpass(renderer->subpass_index);
 		
-		submissions.Submit_3D_Model(mesh_renderer->mesh, mesh_renderer->material, mesh_renderer->transform.Get_Matrix());
+		f32 sqrd_distance_to_camera = renderer->material->Has_Transparensy() ? Maths::Distance_Squered(camera_position, renderer->transform.Position()) : 0;
+		submissions.Submit_3D_Model(renderer->mesh, renderer->material, renderer->transform.Get_Matrix(), sqrd_distance_to_camera);
 	}
 	
-	for (auto billboard_renderer : m_components.Components<Billboard_Renderer>())
+	for (auto renderer : m_components.Components<Billboard_Renderer>())
 	{
-		if (submissions.Get_Active_Subpass_Index() != billboard_renderer->subpass_index)
-			submissions.Set_Active_Subpass(billboard_renderer->subpass_index);
+		if (submissions.Get_Active_Subpass_Index() != renderer->subpass_index)
+			submissions.Set_Active_Subpass(renderer->subpass_index);
 		
-		submissions.Submit_Billboard(billboard_renderer->mesh, billboard_renderer->material, billboard_renderer->transform.Position(), billboard_renderer->transform.Scale());
-	}	
+		f32 sqrd_distance_to_camera = renderer->material->Has_Transparensy() ? Maths::Distance_Squered(camera_position, renderer->transform.Position()) : 0;
+		submissions.Submit_Billboard(renderer->mesh, renderer->material, renderer->transform.Position(), renderer->transform.Scale(), sqrd_distance_to_camera);
+	}
+
+	m_visualize_transforms = true;
+	if(m_visualize_transforms)
+	{
+		auto& mesh_and_material_names = Asset().Load_Model_File("plane.obj");
+		Material_Properties mp;
+		mp.transparensy = 0.5f;
+		Material* material = Asset().Create_Material("circle_mat", mp, Asset().Texture("white.png"), Shader(SHADER_DEF_CIRCLE));
+		Mesh* mesh = Asset().Mesh(mesh_and_material_names[0].first);
+
+		submissions.Set_Active_Subpass(-1);
+
+		for (auto transform : m_components.Components<Transform>())
+		{
+			//if (!transform->Is_Root()) continue;
+
+			glm::vec3 pos = transform->Position();
+
+			f32 sqrd_distance_to_camera = Maths::Distance_Squered(camera_position, pos);
+
+			submissions.Submit_Billboard(mesh, material, pos, glm::vec3(0.25f), sqrd_distance_to_camera);
+		}
+	}
 }
 
-void Bolt::Layer::Update_Scene_Descriptor(Bolt::Render_Submissions& submissions)
+void Bolt::Layer::Update_Scene_Descriptor(Bolt::Render_Submissions& submissions, glm::vec3& out_camera_position)
 {
 	if (!submissions.Active_Pass().info.scene_descriptor) return;
 
 	Entity data_holder = m_entity_spawner.Create(submissions.Active_Pass().info.data_id);
 	Camera& camera = data_holder.Get<Camera>();
+	out_camera_position = camera.transform.Position();
 
 	Camera_Data cam_data;
-	cam_data.pos = glm::translate(glm::mat4(1), camera.transform.Position());
-	cam_data.view = glm::lookAt(camera.transform.Position(), camera.transform.Position() - glm::normalize(camera.transform.Rotation()), camera.up_direction);
-	//cam_data.view = glm::lookAt(camera.transform.Position() - glm::normalize(camera.transform.Rotation()), camera.transform.Position(), camera.up_direction);
-	//cam_data.view = glm::translate(glm::mat4(1), camera.transform.Position());
-	cam_data.proj = glm::perspective(glm::radians(75.f), (float)Window_Extent().x / (float)Window_Extent().y, 0.1f, 1000.0f);
+	cam_data.view = glm::lookAt(out_camera_position, out_camera_position - glm::normalize(camera.transform.Rotation()), camera.up_direction);
+
+	if (camera.projection_mode == Camera::Projection::Perspective)
+		cam_data.proj = glm::perspective(glm::radians(camera.field_of_view), (float)Window_Extent().x / (float)Window_Extent().y, 0.1f, camera.far_clip_distance);
+		
+	else
+	{
+		f32 left, right, top, bottom;
+		left = -(f32)Window_Extent().x * (camera.field_of_view / (camera.field_of_view * camera.field_of_view));
+		right = +(f32)Window_Extent().x * (camera.field_of_view / (camera.field_of_view * camera.field_of_view));
+		top = (f32)Window_Extent().y * (camera.field_of_view / (camera.field_of_view * camera.field_of_view));
+		bottom = -(f32)Window_Extent().y * (camera.field_of_view / (camera.field_of_view * camera.field_of_view));
+		cam_data.proj = glm::ortho(left, right, bottom, top, -camera.far_clip_distance, camera.far_clip_distance);
+	}
 	cam_data.proj[1][1] *= -1;
-	
+
 	Enviroment_Data& env_data = data_holder.Get<Enviroment_Data>();
 	
 	submissions.Active_Pass().info.scene_descriptor->Set_Data(cam_data, env_data);
@@ -96,13 +132,20 @@ void Bolt::Layer::Create_Skybox_From_Model(const std::string& model_path, glm::v
 
 void Bolt::Layer::Create_Mesh_Renderers_From_Model(const std::string& model_path, Mesh_Renderer_Create_Info create_info)
 {
-	auto& mesh_and_material_names = Asset().Load_Model_File(model_path, create_info.shader);
+	auto& mesh_and_material_names = Asset().Load_Model_File(model_path, create_info.shader, create_info.offset_by_origin);
 
 	for (auto& [mesh_name, material_name] : mesh_and_material_names)
 	{
-		Entity entity = Create_Entity();
-		entity.Attach<Transform>(create_info.root, create_info.position, create_info.rotation, create_info.scale);
+		glm::vec3 position = create_info.position;
+		glm::vec3 mesh_origin = Asset().Mesh_Origin(mesh_name);
+			if (create_info.offset_by_origin)
+				position += mesh_origin; 
+		
+			Entity entity = Create_Entity();
+		entity.Attach<Transform>(create_info.root, position, create_info.rotation, create_info.scale);
 		entity.Attach<Mesh_Renderer>(entity, Asset().Mesh(mesh_name), Asset().Material(material_name), create_info.render_pass);
+		if (create_info.include_name_tag)
+			entity.Attach<Name_Tag>(mesh_name);
 	}
 }
 
@@ -127,6 +170,23 @@ void Bolt::Layer::Spawn_Billboards_From_Model(const std::string& model_path, Tra
 		Entity entity = Create_Entity();
 		entity.Attach<Transform>(root, position, rotation, scale);
 		entity.Attach<Billboard_Renderer>(entity, Asset().Mesh(mesh_name), Asset().Material(material_name), render_pass);
+	}
+}
+
+void Bolt::Layer::Spawn_Circles_From_Model(const std::string& model_path, Transform* root, glm::vec3 position, glm::vec3 rotation, glm::vec3 scale, u32 render_pass)
+{
+	render_pass = 1;
+
+	auto& mesh_and_material_names = Asset().Load_Model_File(model_path);
+	Material_Properties mp;
+	mp.transparensy = 0.5f;
+	Material* material = Asset().Create_Material("circle_mat", mp, Asset().Texture("white.png"), Shader(SHADER_DEF_CIRCLE));
+
+	for (auto& [mesh_name, material_name] : mesh_and_material_names)
+	{
+		Entity entity = Create_Entity();
+		entity.Attach<Transform>(root, position, rotation, scale * 0.5f);
+		entity.Attach<Billboard_Renderer>(entity, Asset().Mesh(mesh_name), material, render_pass);
 	}
 }
 

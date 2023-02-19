@@ -4,6 +4,7 @@
 #include <vector>
 #include <array>
 #include <optional>
+#include <string>
 
 #include <glm/glm.hpp>
 #include <glm/gtx/hash.hpp>
@@ -99,7 +100,6 @@ namespace Bolt
     {
         glm::mat4 view = glm::mat4(1);
         glm::mat4 proj = glm::mat4(1);
-        glm::mat4 pos = glm::mat4(0);
     };
 
     struct Enviroment_Data
@@ -239,6 +239,7 @@ namespace Bolt
     {
         Load,
         Clear,
+        Discard,
     };
 }
 

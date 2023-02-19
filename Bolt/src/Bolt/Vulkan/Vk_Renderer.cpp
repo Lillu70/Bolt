@@ -89,8 +89,6 @@ void Bolt::Vk_Renderer::Dest()
 
 void Bolt::Vk_Renderer::Draw_Frame(Render_Submissions& submissions, glm::vec3 clear_color)
 {
-	//vkDeviceWaitIdle(m_device);
-
 	Frame_Data& frame = m_frame_data[m_current_frame];
 
 	vkWaitForFences(m_device, 1, &frame.sync.render_fence, VK_TRUE, UINT64_MAX);
@@ -98,6 +96,8 @@ void Bolt::Vk_Renderer::Draw_Frame(Render_Submissions& submissions, glm::vec3 cl
 	if (Acquire_Image_From_Swapchain(frame) == false)
 		return;
 	
+	m_draw_calls = 0;
+
 	//Only reset the fence if we are submitting work.
 	vkResetFences(m_device, 1, &frame.sync.render_fence);
 
@@ -169,13 +169,15 @@ void Bolt::Vk_Renderer::Draw_Render_Pass(Bolt::Pass_Submissions& active_pass, Vk
 {
 	VkRenderPass render_pass = active_pass.info.render_pass->renderpass ? active_pass.info.render_pass->renderpass : m_dummy_render_pass;
 
+	active_pass.Sort_Transparent();
+
 	Vk_Util::RCMD_Begin_Render_Pass(cmd_buffer, render_pass, framebuffer, m_swapchain.extent, clear_color);
 	Draw_Submissions(cmd_buffer, active_pass);
 	vkCmdEndRenderPass(cmd_buffer);
 }
 
 void Bolt::Vk_Renderer::Draw_Submissions(VkCommandBuffer& cmd_buffer, const Pass_Submissions& submissions)
-{
+{	
 	Draw_Render_Objects(&submissions.models_3D, cmd_buffer);
 	Draw_Render_Objects(&submissions.transparent_models_3D, cmd_buffer);
 	Draw_Render_Objects(&submissions.billboards, cmd_buffer);
@@ -218,6 +220,7 @@ void Bolt::Vk_Renderer::Draw_Render_Objects(const std::vector<Render_Object_3D_M
 		vkCmdPushConstants(cmd_buffer, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Bolt::Push_Constant), &pc);
 
 		vkCmdDrawIndexed(cmd_buffer, active_mesh->m_index_count, 1, 0, 0, 0);
+		m_draw_calls++;
 	}
 }
 
@@ -239,6 +242,7 @@ void Bolt::Vk_Renderer::Draw_Render_Objects(const std::vector<Render_Object_Bill
 		if (render_obj.material != active_material)
 		{
 			active_material = render_obj.material;
+			ASSERT(active_material, "Active material is a nullptr");
 			vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, active_material->m_pipeline);
 
 			//Bind per material descriptor.
@@ -249,6 +253,7 @@ void Bolt::Vk_Renderer::Draw_Render_Objects(const std::vector<Render_Object_Bill
 		if (render_obj.mesh != active_mesh)
 		{
 			active_mesh = render_obj.mesh;
+			ASSERT(active_mesh, "Active mesh is a nullptr");
 			VkDeviceSize offsets[] = { 0 };
 			vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &active_mesh->m_vertex_buffer.handle, offsets);
 			vkCmdBindIndexBuffer(cmd_buffer, active_mesh->m_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
@@ -258,6 +263,7 @@ void Bolt::Vk_Renderer::Draw_Render_Objects(const std::vector<Render_Object_Bill
 		vkCmdPushConstants(cmd_buffer, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Bolt::Push_Constant), &pc);
 
 		vkCmdDrawIndexed(cmd_buffer, active_mesh->m_index_count, 1, 0, 0, 0);
+		m_draw_calls++;
 	}
 }
 
@@ -438,23 +444,27 @@ void Bolt::Vk_Renderer::Create_Render_Pass(Render_Pass& output, Clear_Method col
 	case Bolt::Clear_Method::Load:
 		color_attachments.push_back(Vk_Util::Color_Load_Attach(m_gpu.formats));
 		break;
+
 	case Bolt::Clear_Method::Clear:
 		color_attachments.push_back(Vk_Util::Color_Clear_Attach(m_gpu.formats));
 		break;
+
 	default:
 		ERROR("Invalid clear method");
 		break;
 	}
 
-	VkAttachmentDescription depth_attachment;
+	std::optional<VkAttachmentDescription> depth_attachment;
 	switch (depth_clear_method)
 	{
 	case Bolt::Clear_Method::Load:
 		depth_attachment =Vk_Util::Depth_Load_Attach(m_gpu.formats);
 		break;
+
 	case Bolt::Clear_Method::Clear:
 		depth_attachment = Vk_Util::Depth_Clear_Attach(m_gpu.formats);
 		break;
+
 	default:
 		ERROR("Invalid clear method");
 		break;
@@ -492,9 +502,15 @@ void Bolt::Vk_Renderer::Destroy(Scene_Descriptor& scene_descriptor)
 
 void Bolt::Vk_Renderer::Create_Default_Resources()
 {
+	//m_default_circle_shader
+
 	Load_Shader("_Shaders/frag.spv", "_Shaders/vert.spv", m_default_shader);
 	Load_Shader("_Shaders/diffuse/frag.spv", "_Shaders/diffuse/vert.spv", m_default_diffuse_shader);
 	Load_Shader("_Shaders/billboard/frag.spv", "_Shaders/billboard/vert.spv", m_default_billboard_shader);
+
+
+
+	Load_Shader("_Shaders/circle/frag.spv", "_Shaders/circle/vert.spv", m_default_circle_shader);
 }
 
 
@@ -503,6 +519,7 @@ void Bolt::Vk_Renderer::Destory_Default_Resources()
 	Destroy(m_default_shader);
 	Destroy(m_default_diffuse_shader);
 	Destroy(m_default_billboard_shader);
+	Destroy(m_default_circle_shader);
 }
 
 
@@ -520,6 +537,9 @@ Bolt::Raw_Shader* Bolt::Vk_Renderer::Extract_Raw_Shader(const Shader shader)
 
 	case Shader::Defaults::Diffuse:
 		return &m_default_diffuse_shader;
+
+	case Shader::Defaults::Circle:
+		return &m_default_circle_shader;
 
 	default:
 		ERROR("Unhandeled shader default!");

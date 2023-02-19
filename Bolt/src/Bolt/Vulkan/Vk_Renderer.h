@@ -17,6 +17,8 @@ namespace Bolt
 		~Vk_Renderer();
 		
 		void Draw_Frame(Render_Submissions& submissions, glm::vec3 clear_color = glm::vec3(0));
+		
+		u32 Last_Frame_Draw_Call_Count() { return m_draw_calls; }
 
 		VkExtent2D* Swapchain_Extent() { return &m_swapchain.extent; }
 
@@ -101,6 +103,7 @@ namespace Bolt
 		
 		std::array<Frame_Data, MAX_FRAMES_IN_FLIGHT> m_frame_data;
 
+		u32 m_draw_calls = 0;
 		u32 m_current_frame = 0;
 		bool m_framebuffer_resized = false;
 		glm::ivec2 m_framebuffer_size;
@@ -111,5 +114,6 @@ namespace Bolt
 		Raw_Shader m_default_shader;
 		Raw_Shader m_default_diffuse_shader;
 		Raw_Shader m_default_billboard_shader;
+		Raw_Shader m_default_circle_shader;
 	};
 }

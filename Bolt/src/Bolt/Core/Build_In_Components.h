@@ -126,6 +126,8 @@ namespace Bolt
 
 		const glm::mat4* Get_Matrix() const { return &m_matrix; };
 
+		bool Is_Root() { return m_parent == nullptr; }
+
 		void Make_Root()
 		{
 
@@ -163,10 +165,25 @@ namespace Bolt
 
 	struct Camera
 	{
+		enum class Projection
+		{
+			Perspective,
+			Orthographic,
+		};
+
 		Camera(Entity entity) : transform(entity.Get<Transform>()) {}
 		
 		Transform& transform;
 		glm::vec3 up_direction = glm::vec3(0, 1, 0);
+		Projection projection_mode = Projection::Perspective;
+		f32 field_of_view = 60.f;
+		f32 far_clip_distance = 1000.f;
+
+		void Set_Field_Of_View(f32 new_value)
+		{
+			new_value = std::clamp(new_value, -155.f, 155.f);
+			field_of_view = new_value;
+		}
 	};
 
 	struct Camera_Controller
@@ -241,10 +258,17 @@ namespace Bolt
 	{
 		Transform* root = nullptr;
 		u32 render_pass = 1;
-		Shader shader = Shader(SHADER_DEF_DIFFUSE);
+		Shader shader = Shader(SHADER_DEF_SPECULAR);
 		glm::vec3 position = glm::vec3(0);
 		glm::vec3 rotation = glm::vec3(0);
-		glm::vec3 scale = glm::vec3(0);
+		glm::vec3 scale = glm::vec3(1);
+		bool offset_by_origin = false;
+
+#ifdef _DEBUG
+		bool include_name_tag = true;
+#else
+		bool include_name_tag = false;
+#endif // _DEBUG
 	};
 
 	struct Mesh_Renderer
@@ -271,5 +295,13 @@ namespace Bolt
 		Material* material = nullptr;
 		Transform& transform;
 		u32 subpass_index;
+	};
+
+	struct Name_Tag
+	{
+		Name_Tag() = default;
+		Name_Tag(std::string name) : name(name) {}
+
+		std::string name;
 	};
 }

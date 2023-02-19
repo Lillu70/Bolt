@@ -50,8 +50,9 @@ namespace Bolt
 		glm::vec3 m_clear_color = glm::vec3(0);
 		bool m_close_app = false;
 
-		uint32_t m_fps = 0;
-		uint32_t m_fps_frame_counter = 0;
+		u32 m_accum_draw_call_count = 0;
+		u32 m_fps = 0;
+		u32 m_fps_frame_counter = 0;
 		Time m_fps_accum_time = 0;
 		Time m_time_step = 0;
 

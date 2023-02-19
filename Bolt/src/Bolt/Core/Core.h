@@ -1,4 +1,5 @@
 #pragma once
+#include "Bolt_Types.h"
 
 //GLM
 #include <glm/gtc/matrix_transform.hpp>

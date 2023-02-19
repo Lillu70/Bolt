@@ -213,7 +213,7 @@ namespace Bolt
 		template<typename T>
 		CMPT_Pool<T>& Pool() 
 		{ 
-			ASSERT(m_pools, "Pools is a nullptr");
+			ASSERT(m_pools, "Uninitialized entity!");
 			return m_pools->Pool<T>(); 
 		}
 

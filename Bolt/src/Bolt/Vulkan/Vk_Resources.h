@@ -27,11 +27,13 @@ namespace Bolt
 			Specular,
 			Billboard,
 			Diffuse,
+			Circle,
 		};
 
 		#define SHADER_DEF_SPECULAR Bolt::Shader::Defaults::Specular
 		#define SHADER_DEF_BILLBOARD Bolt::Shader::Defaults::Billboard
 		#define SHADER_DEF_DIFFUSE Bolt::Shader::Defaults::Diffuse
+		#define SHADER_DEF_CIRCLE Bolt::Shader::Defaults::Circle
 
 		Shader() = default;
 

@@ -1,11 +1,10 @@
 #pragma once
 #include <Bolt.h>
-#include "Camera_Controller.h"
 
 class Sandbox : public Bolt::Application
 {
 public:
-	Sandbox() : m_camera(Input()) {};
+	Sandbox(){};
 	~Sandbox() {};
 
 protected:
@@ -13,8 +12,6 @@ protected:
 	void User_Update(Bolt::Time time_step) override;
 
 private:
-	Camera_Controller m_camera;
-	
 	Bolt::Timer spawn_timer;
 
 	glm::vec3 offset = glm::vec3(3, 0, 0.f);

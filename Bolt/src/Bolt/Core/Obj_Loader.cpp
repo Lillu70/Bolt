@@ -85,6 +85,9 @@ std::vector<std::pair<std::string, std::string>> Bolt::Obj_Loader::Load(const st
 
         if (word == "f") // face
         {
+            if (!active_sub_mesh)
+                active_sub_mesh = &sub_meshes["NONE"];
+            
             ASSERT(active_sub_mesh, "Active sub mesh is a nullptr!");
             word = Read_Faces_In_Tight_Loop(file, positions, texture_coord, normals, *active_sub_mesh);
             goto WORD_CHECKS_START;

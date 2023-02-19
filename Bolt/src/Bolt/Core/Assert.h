@@ -13,6 +13,16 @@ abort();												\
 #define ASSERT(STATEMENT, MESSAGE)
 #endif
 
+#ifdef _DEBUG
+#define TRACE(MESSAGE)									\
+{														\
+std::cout << "[TRACE] " << MESSAGE << "\n";				\
+}														\
+0 + 0
+#else
+#define TRACE(STATEMENT, MESSAGE)
+#endif
+
 #define ERROR(MESSAGE)									\
 {														\
 std::cout << "\n[FATAL ERROR]: " << MESSAGE << "!\n";	\

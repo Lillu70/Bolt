@@ -31,6 +31,8 @@ namespace Bolt
 			Timer frame_timer;
 
 			glfwPollEvents();
+			
+			Input().Update_Key_States();
 
 			User_Update(m_time_step);
 
@@ -44,6 +46,7 @@ namespace Bolt
 			}
 			
 			m_renderer->Draw_Frame(m_submissions, m_clear_color);
+			m_accum_draw_call_count += m_renderer->Last_Frame_Draw_Call_Count();
 			m_submissions.Clear();
 
 			Update_Time_Step(frame_timer.Get_Time().As_Seconds());
@@ -71,9 +74,12 @@ namespace Bolt
 		{
 			m_fps_accum_time--;
 			m_fps = m_fps_frame_counter;
+
+			u32 mean_draw_call_count = m_accum_draw_call_count / m_fps_frame_counter;
+			m_accum_draw_call_count = 0;
 			m_fps_frame_counter = 0;
 
-			std::string title = m_window_title + " -- FPS: " + std::to_string(m_fps);
+			std::string title = m_window_title + " [FPS: " + std::to_string(m_fps) + " | DC/s: " + std::to_string(mean_draw_call_count) + "]";
 			glfwSetWindowTitle(m_window, title.c_str());
 		}
 	}
@@ -95,6 +101,8 @@ namespace Bolt
 
 	void Application::Push_Layer(std::unique_ptr<Layer> layer)
 	{
+		//TODO: pass an application interface for the layer instead of this injection shit.
+
 		ASSERT(layer.get(), "Attempting to push a nullptr!");
 		auto& _layer = m_layers.emplace_back(std::move(layer));
 		_layer->m_assets = m_assets.get();
@@ -102,6 +110,7 @@ namespace Bolt
 		_layer->m_render_submissions = &m_submissions;
 		_layer->m_layer_index = u32(m_layers.size()) - 1;
 		_layer->m_extent_ptr = m_renderer->Swapchain_Extent();
+		_layer->m_close_app_ptr = &m_close_app;
 		
 		Render_Pass_Info pass_info;
 		Clear_Method color_clear_method = _layer->m_layer_index == 0? Clear_Method::Clear: Clear_Method::Load;

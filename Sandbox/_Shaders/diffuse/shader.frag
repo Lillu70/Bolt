@@ -18,7 +18,6 @@ layout(set = 1, binding = 1) uniform MaterialUniformBufferObject
 	vec3 specular_color;
 } mat_ub;
 
-
 layout(location = 0) in vec3 fragWorldPosition;
 layout(location = 1) in vec3 fragWorldNormal;
 layout(location = 2) in vec2 fragTexCoord;

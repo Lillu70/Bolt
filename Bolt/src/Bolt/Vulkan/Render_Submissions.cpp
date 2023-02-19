@@ -5,17 +5,19 @@ Bolt::Render_Submissions::Render_Submissions()
 	m_mainp_iter = m_passes.begin();
 }
 
-void Bolt::Render_Submissions::Submit_3D_Model(Mesh* mesh, Material* material, const glm::mat4* matrix)
+void Bolt::Render_Submissions::Submit_3D_Model(Mesh* mesh, Material* material, const glm::mat4* matrix, f32 sqrd_distance_to_camera)
 {
+	//Active_Pass().model_map_3D[material][mesh].emplace_back(*matrix);
+
 	if (material->Has_Transparensy())
-		Active_Pass().transparent_models_3D.emplace_back(mesh, material, matrix);
+		Active_Pass().transparent_models_3D.emplace_back(mesh, material, matrix, sqrd_distance_to_camera);
 	else
 		Active_Pass().models_3D.emplace_back(mesh, material, matrix);
 }
 
-void Bolt::Render_Submissions::Submit_Billboard(Mesh* mesh, Material* material, glm::vec3 position, glm::vec2 scale)
+void Bolt::Render_Submissions::Submit_Billboard(Mesh* mesh, Material* material, glm::vec3 position, glm::vec2 scale, f32 sqrd_distance_to_camera)
 {
-	Active_Pass().billboards.emplace_back(mesh, material, position, scale);
+	Active_Pass().billboards.emplace_back(mesh, material, position, scale, sqrd_distance_to_camera);
 }
 
 bool Bolt::Render_Submissions::Activate_Next_Pass()
@@ -59,10 +61,10 @@ bool Bolt::Render_Submissions::Activate_Last_Main_Pass()
 void Bolt::Render_Submissions::Set_Active_Subpass(u32 index)
 {
 	auto& [main_pass, subpasses] = Get_Active_Main_Pass();
-
+	u32 ubpass_count = u32(subpasses.size());
 	m_active_subpass_index = index;
-	if (m_active_subpass_index > subpasses.size())
-		m_active_subpass_index = 0;
+	if (m_active_subpass_index > ubpass_count)
+		m_active_subpass_index = ubpass_count;
 	
 	if (m_active_subpass_index == 0)
 	{
@@ -138,4 +140,17 @@ Bolt::Render_Submissions::Main_Pass& Bolt::Render_Submissions::Get_Active_Main_P
 {
 	ASSERT(!m_passes.empty(), "Passes list is empty!");
 	return *m_mainp_iter;
+}
+
+void Bolt::Pass_Submissions::Sort_Transparent()
+{
+	std::sort(transparent_models_3D.begin(), transparent_models_3D.end(), [](const Render_Object_3D_Model& lhs, const Render_Object_3D_Model& rhs)
+		{
+			return lhs.sqrd_distance_to_camera > rhs.sqrd_distance_to_camera;
+		});
+
+	std::sort(billboards.begin(), billboards.end(), [](const Render_Object_Billboard& lhs, const Render_Object_Billboard& rhs)
+		{
+			return lhs.sqrd_distance_to_camera > rhs.sqrd_distance_to_camera;
+		});
 }
