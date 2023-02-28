@@ -1,6 +1,14 @@
 #include "Layer.h"
 #include "Maths.h"
 
+void Bolt::Layer::Update(Time time_step)
+{
+	User_Update(time_step);
+
+	for (auto transfrom : m_components.Components<Transform_Glue>())
+		transfrom->Glue();
+}
+
 void Bolt::Layer::Inject_Render_Submissions()
 {
 	Render_Submissions& submissions = *m_render_submissions;
@@ -23,31 +31,10 @@ void Bolt::Layer::Inject_Render_Submissions()
 			submissions.Set_Active_Subpass(renderer->subpass_index);
 		
 		f32 sqrd_distance_to_camera = renderer->material->Has_Transparensy() ? Maths::Distance_Squered(camera_position, renderer->transform.Position()) : 0;
-		submissions.Submit_Billboard(renderer->mesh, renderer->material, renderer->transform.Position(), renderer->transform.Scale(), sqrd_distance_to_camera);
+		submissions.Submit_Billboard(renderer->mesh, renderer->material, renderer->transform.Position(), renderer->transform.Scale(), glm::vec3(0), sqrd_distance_to_camera);
 	}
 
-	m_visualize_transforms = true;
-	if(m_visualize_transforms)
-	{
-		auto& mesh_and_material_names = Asset().Load_Model_File("plane.obj");
-		Material_Properties mp;
-		mp.transparensy = 0.5f;
-		Material* material = Asset().Create_Material("circle_mat", mp, Asset().Texture("white.png"), Shader(SHADER_DEF_CIRCLE));
-		Mesh* mesh = Asset().Mesh(mesh_and_material_names[0].first);
-
-		submissions.Set_Active_Subpass(-1);
-
-		for (auto transform : m_components.Components<Transform>())
-		{
-			//if (!transform->Is_Root()) continue;
-
-			glm::vec3 pos = transform->Position();
-
-			f32 sqrd_distance_to_camera = Maths::Distance_Squered(camera_position, pos);
-
-			submissions.Submit_Billboard(mesh, material, pos, glm::vec3(0.25f), sqrd_distance_to_camera);
-		}
-	}
+	User_Renderer_Submit(submissions, camera_position);
 }
 
 void Bolt::Layer::Update_Scene_Descriptor(Bolt::Render_Submissions& submissions, glm::vec3& out_camera_position)
@@ -59,7 +46,7 @@ void Bolt::Layer::Update_Scene_Descriptor(Bolt::Render_Submissions& submissions,
 	out_camera_position = camera.transform.Position();
 
 	Camera_Data cam_data;
-	cam_data.view = glm::lookAt(out_camera_position, out_camera_position - glm::normalize(camera.transform.Rotation()), camera.up_direction);
+	cam_data.view = glm::lookAt(out_camera_position, out_camera_position - glm::normalize(camera.transform.Orientation()), camera.up_direction);
 
 	if (camera.projection_mode == Camera::Projection::Perspective)
 		cam_data.proj = glm::perspective(glm::radians(camera.field_of_view), (float)Window_Extent().x / (float)Window_Extent().y, 0.1f, camera.far_clip_distance);
@@ -83,8 +70,9 @@ void Bolt::Layer::Update_Scene_Descriptor(Bolt::Render_Submissions& submissions,
 Bolt::Entity_ID Bolt::Layer::Create_Camera_And_Env_Data_Entity()
 {
 	Entity ld = m_entity_spawner.Create();
-	ld.Attach<Transform>().Set_Local_Rotation(glm::vec3(0,0,1));
+	ld.Attach<Transform>().Set_Local_Orientation(glm::vec3(0,0,1));
 	ld.Attach<Camera>(ld);
+	ld.Attach<Name_Tag>(m_components, "Camera");
 	ld.Attach<Enviroment_Data>();
 
 	return ld.ID();
@@ -120,9 +108,16 @@ glm::uvec2 Bolt::Layer::Window_Extent()
 void Bolt::Layer::Create_Skybox_From_Model(const std::string& model_path, glm::vec3 scale)
 {
 	Entity camera_entity = Get_Camera_Entity();
+	Transform* camera_transform = &camera_entity.Get<Transform>();
+
+	Entity skybox = Create_Entity();
+	Transform& skybox_transform = skybox.Attach<Transform>();
+	skybox_transform.Set_Local_Position(camera_transform->Position());
+	
+	skybox.Attach<Transform_Glue>(camera_transform, &skybox_transform);
 
 	Mesh_Renderer_Create_Info create_info;
-	create_info.root = &camera_entity.Get<Transform>();
+	create_info.root = &skybox_transform;
 	create_info.render_pass = 0;
 	create_info.scale = scale;
 	create_info.shader = Shader(SHADER_DEF_DIFFUSE);
@@ -136,6 +131,7 @@ void Bolt::Layer::Create_Mesh_Renderers_From_Model(const std::string& model_path
 
 	for (auto& [mesh_name, material_name] : mesh_and_material_names)
 	{
+
 		glm::vec3 position = create_info.position;
 		glm::vec3 mesh_origin = Asset().Mesh_Origin(mesh_name);
 			if (create_info.offset_by_origin)
@@ -145,7 +141,7 @@ void Bolt::Layer::Create_Mesh_Renderers_From_Model(const std::string& model_path
 		entity.Attach<Transform>(create_info.root, position, create_info.rotation, create_info.scale);
 		entity.Attach<Mesh_Renderer>(entity, Asset().Mesh(mesh_name), Asset().Material(material_name), create_info.render_pass);
 		if (create_info.include_name_tag)
-			entity.Attach<Name_Tag>(mesh_name);
+			entity.Attach<Name_Tag>(m_components, mesh_name);
 	}
 }
 

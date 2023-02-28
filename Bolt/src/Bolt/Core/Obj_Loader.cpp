@@ -110,7 +110,10 @@ void Bolt::Obj_Loader::Push_Sub_Meshes(std::unordered_map<std::string, Model_Loa
     for (auto& [material_name, sub_mesh] : sub_meshes)
     {
         std::pair<std::string, std::string>& mesh_and_material_name = shape_names.emplace_back();
-        mesh_and_material_name.first = active_object_name + "_" + std::to_string(index++);
+        if (index > 0)
+            mesh_and_material_name.first = active_object_name + "_" + std::to_string(index++);
+        else
+            mesh_and_material_name.first = active_object_name;
         mesh_and_material_name.second = material_name;
 
         injector->Push_Mesh(mesh_and_material_name.first, sub_mesh.vertices, sub_mesh.indices);

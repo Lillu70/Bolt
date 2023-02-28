@@ -20,7 +20,7 @@ layout(set = 1, binding = 1) uniform MaterialUniformBufferObject
 
 
 layout(location = 0) in vec2 frag_tex_coord;
-
+layout(location = 1) in vec3 frag_color;
 
 layout(location = 0) out vec4 outColor;
 
@@ -31,7 +31,7 @@ void main()
 
 	if( dot(uv,uv) < 1)
 	{
-		outColor.rgba = vec4(0.3,0,0.3,0.8);
+		outColor.rgba = vec4(frag_color, 0.8);
 	}
 	else
 	{

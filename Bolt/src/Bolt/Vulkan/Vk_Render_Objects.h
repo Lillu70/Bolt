@@ -20,13 +20,16 @@ namespace Bolt
 	struct Render_Object_Billboard
 	{
 		Render_Object_Billboard() = default;
-		Render_Object_Billboard(Mesh* mesh, Material* material, glm::vec3 position, glm::vec2 scale) : mesh(mesh), material(material), position(position), scale(scale) {}
-		Render_Object_Billboard(Mesh* mesh, Material* material, glm::vec3 position, glm::vec2 scale, f32 sqrd_distance_to_camera) : 
-			mesh(mesh), material(material), position(position), scale(scale), sqrd_distance_to_camera(sqrd_distance_to_camera){}
+		Render_Object_Billboard(Mesh* mesh, Material* material, glm::vec3 position, glm::vec2 scale) 
+			: mesh(mesh), material(material), position(position), scale(scale) {}
+		
+		Render_Object_Billboard(Mesh* mesh, Material* material, glm::vec3 position, glm::vec2 scale, glm::vec3 color, f32 sqrd_distance_to_camera) : 
+			mesh(mesh), material(material), position(position), scale(scale), color(color), sqrd_distance_to_camera(sqrd_distance_to_camera) {}
 
 		Mesh* mesh = nullptr;
 		Material* material = nullptr;
 		glm::vec3 position = glm::vec3(0);
+		glm::vec3 color = glm::vec3(1);
 		glm::vec2 scale = glm::vec2(1);
 		
 		f32 sqrd_distance_to_camera = 0;
@@ -51,5 +54,20 @@ namespace Bolt
 		Render_Pass* render_pass = nullptr;
 		Scene_Descriptor* scene_descriptor = nullptr;
 		u32 data_id = 0;
+	};
+
+	template<typename T>
+	struct Material_Mesh_Map
+	{
+		std::unordered_map<Mesh*, std::vector<T>>& operator [] (Material* idx) { return map[idx]; }
+
+		void Clear()
+		{
+			for (auto& mat : map)
+				for (auto& [mesh, t_map] : mat.second)
+					t_map.clear();
+		}
+
+		std::unordered_map<Material*, std::unordered_map<Mesh*, std::vector<T>>> map;
 	};
 }

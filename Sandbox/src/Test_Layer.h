@@ -6,14 +6,20 @@ class Test_Layer : public Bolt::Layer
 {
 public:
 	void Initialize() override;
-	void Update(Bolt::Time time_step) override;
+	void User_Update(Bolt::Time time_step) override;
+	void User_Renderer_Submit(Bolt::Render_Submissions& submissions, glm::vec3 camera_position) override;
 
-	void Display_Name_Tags();
-	void Transform_Select_And_Modify(float time_step);
+	void Select_And_Modify_Transforms(float time_step);
+	bool Get_KP_Directional_Input(glm::vec3& direction);
+
+private:
+	void Extract_Selected_Transforms_From_Hierarhy(const std::vector<Bolt::Transform*>& selected_child_hierarchy, Bolt::Transform* selected_transform, std::vector<Bolt::Transform*>& hierarchy);
 
 private:
 	Bolt::Entity player;
 	Bolt::Entity camera;
 
+	bool m_visualize_transforms = false;
+	Bolt::Entity m_selected_entity;
 };
 

@@ -2,15 +2,15 @@
 
 #include "../Vulkan/Vk_Resources.h"
 
-#include "Bolt_Types.h"
 #include "Component_System.h"
-
-#include <glm/glm.hpp>
+#include "Core.h"
 
 namespace Bolt
 {
 	struct Transform
 	{
+		//http://www.opengl-tutorial.org/intermediate-tutorials/tutorial-17-quaternions/
+
 		Transform() = default;
 
 		Transform(Transform* root) 
@@ -23,24 +23,24 @@ namespace Bolt
 			Set_Local_Position(local_position); 
 		}
 
-		Transform(glm::vec3 local_position, glm::vec3 local_rotation) 
+		Transform(glm::vec3 local_position, glm::vec3 local_orientation) 
 		{ 
 			Set_Local_Position(local_position);
-			Set_Local_Rotation(local_rotation);
+			Set_Local_Orientation(local_orientation);
 		}
 
-		Transform(glm::vec3 local_position, glm::vec3 local_rotation, glm::vec3 local_scale)
+		Transform(glm::vec3 local_position, glm::vec3 local_orientation, glm::vec3 local_scale)
 		{
 			Set_Local_Position(local_position);
-			Set_Local_Rotation(local_rotation);
+			Set_Local_Orientation(local_orientation);
 			Set_Local_Scale(local_scale);
 		}
 
-		Transform(Transform* root, glm::vec3 local_position, glm::vec3 local_rotation, glm::vec3 local_scale)
+		Transform(Transform* root, glm::vec3 local_position, glm::vec3 local_orientation, glm::vec3 local_scale)
 		{
 			if(root) Make_Child_Of(root);
 			Set_Local_Position(local_position);
-			Set_Local_Rotation(local_rotation);
+			Set_Local_Orientation(local_orientation);
 			Set_Local_Scale(local_scale);
 		}
 
@@ -58,30 +58,37 @@ namespace Bolt
 			Update_Transform_Matrix();
 		}
 
+		void Offset_Local_Position_Relative_To_Orientation(glm::vec3 offset)
+		{
+			m_position = m_position + (glm::quat(m_orientation) * (offset));
+			
+			Update_Transform_Matrix();
+		}
+
 		glm::vec3 Position() 
 		{
-			if (!m_parent) return m_position;
-			return m_parent->Scale() * m_position + m_parent->Position();
+			if (Is_Root()) return m_position;
+			return  m_parent->Position() + (m_parent->Quaternion_Orientation() * ((m_position * m_parent->Scale())));
 		}
 
-		const glm::vec3& Local_Rotation() { return m_rotation; };
+		const glm::vec3& Local_Orientation() { return m_orientation; };
 
-		void Set_Local_Rotation(glm::vec3 new_rotation)
+		void Set_Local_Orientation(glm::vec3 new_orientation)
 		{
-			m_rotation = new_rotation;
+			m_orientation = new_orientation;
 			Update_Transform_Matrix();
 		}
 
-		void Offset_Local_Rotation(glm::vec3 offset)
+		void Offset_Local_Orientation(glm::vec3 offset)
 		{
-			m_rotation += offset;
+			m_orientation += offset;
 			Update_Transform_Matrix();
 		}
 
-		glm::vec3 Rotation()
+		glm::vec3 Orientation()
 		{
-			if (!m_parent) return m_rotation;
-			return m_rotation + m_parent->Rotation();
+			if (!m_parent) return m_orientation;
+			return m_orientation + m_parent->Orientation();
 		}
 
 		const glm::vec3& Local_Scale() { return m_scale; }
@@ -109,7 +116,7 @@ namespace Bolt
 			if (root) Internal_Make_Child_Of(root);
 
 			m_position = position;
-			m_rotation = rotation;
+			m_orientation = rotation;
 			m_scale = scale;
 			Update_Transform_Matrix();
 		}
@@ -118,6 +125,12 @@ namespace Bolt
 		{
 			m_matrix = glm::mat4(1);
 			m_matrix *= glm::translate(m_matrix, Position());
+
+			glm::quat rotation_quaternion = Quaternion_Orientation();
+			glm::mat4 rotation_matrix = glm::toMat4(rotation_quaternion);
+
+			m_matrix *= rotation_matrix;
+
 			m_matrix *= glm::scale(glm::mat4(1), Scale());
 
 			for (Transform* child : m_children)
@@ -127,16 +140,50 @@ namespace Bolt
 		const glm::mat4* Get_Matrix() const { return &m_matrix; };
 
 		bool Is_Root() { return m_parent == nullptr; }
-
+		
 		void Make_Root()
 		{
+			if (!m_parent) return;
 
+			m_parent->Remove_Child(this);
+			m_parent = nullptr;
+			Update_Transform_Matrix();
 		}
 
 		void Make_Child_Of(Transform* parent) 
 		{
 			Internal_Make_Child_Of(parent);
 			Update_Transform_Matrix();
+		}
+
+		const std::vector<Transform*> Build_Upwards_Hierarchy() const
+		{
+			std::vector<Transform*> hierarchy;
+
+			Transform* p = m_parent;
+			while (p)
+			{
+				hierarchy.push_back(p);
+				p = p->m_parent;
+			}
+
+			return hierarchy;
+		}
+
+		const std::vector<Transform*> Build_Downwards_Hierarchy() const
+		{
+			std::vector<Transform*> hierarchy;
+
+			for (Transform* child : m_children)
+				child->Build_Downwards_Hierarchy_Internal(hierarchy);
+		
+			return hierarchy;
+		}
+
+		void Explode()
+		{
+			for (Transform* child : m_children)
+				Explode_Internal(child);
 		}
 
 	private:
@@ -152,15 +199,63 @@ namespace Bolt
 			m_parent->m_children.push_back(this);
 		}
 
+		void Remove_Child(Transform* child)
+		{
+			u32 child_index = std::numeric_limits<u32>::max();
+			for (child_index = 0; child_index < m_children.size(); child_index++)
+				if (m_children[child_index] == child)
+					break;
+			
+			if (child_index >= m_children.size())
+				ERROR("Child not found!");
+
+			m_children[child_index] = m_children.back();
+			m_children.pop_back();
+		}
+
+		glm::quat Quaternion_Orientation()
+		{
+			if (Is_Root()) return glm::quat( m_orientation );
+			return m_parent->Quaternion_Orientation() * glm::quat(m_orientation);
+		}
+
+		static void Explode_Internal(Transform* target)
+		{
+			target->Offset_Local_Position(target->m_position);
+			for (Transform* child : target->m_children)
+				Explode_Internal(child);
+		}
+
+		void Build_Downwards_Hierarchy_Internal(std::vector<Transform*>& hierarchy)
+		{
+			hierarchy.push_back(this);
+			for (Transform* child : m_children)
+				child->Build_Downwards_Hierarchy_Internal(hierarchy);
+		}
+
 	private:
 		glm::vec3 m_position = glm::vec3(0);
-		glm::vec3 m_rotation = glm::vec3(0);
+		glm::vec3 m_orientation = glm::vec3(0);
+		//glm::quat m_rotation = glm::quat(m_euler_rotation);
 		glm::vec3 m_scale = glm::vec3(1);
 
 		glm::mat4 m_matrix = glm::mat4(1);
 
 		Transform* m_parent = nullptr;
 		std::vector<Transform*> m_children;
+	};
+
+	struct Transform_Glue
+	{
+		Transform_Glue(Transform* target, Transform* self) : target(target), self(self) {}
+
+		void Glue()
+		{
+			self->Set_Local_Position(target->Local_Position());
+		}
+
+		Transform* target;
+		Transform* self;
 	};
 
 	struct Camera
@@ -245,7 +340,7 @@ namespace Bolt
 			front.y = std::sin(glm::radians(pich));
 			front.z = std::sin(glm::radians(yaw)) * std::cos(glm::radians(pich));
 			
-			camera.transform.Set_Local_Rotation(front);
+			camera.transform.Set_Local_Orientation(front);
 		}
 
 		Camera& camera;
@@ -297,11 +392,28 @@ namespace Bolt
 		u32 subpass_index;
 	};
 
+	//Unique name for the component.
 	struct Name_Tag
 	{
-		Name_Tag() = default;
-		Name_Tag(std::string name) : name(name) {}
+		Name_Tag(CMPT_Pools& pools, const std::string& name)
+		{
+			m_original_name = name;
 
-		std::string name;
+			u32 name_matches = 0;
+			for (auto name_tag : pools.Components<Name_Tag>())
+				if (name_tag->m_original_name == name) name_matches++;
+
+			if (name_matches)
+				m_unique_name = m_original_name + "_" + std::to_string(name_matches);
+			else 
+				m_unique_name = m_original_name;
+		}
+		
+		const std::string& Get_Unique()		{ return m_unique_name;		}
+		const std::string& Get_Original()	{ return m_original_name;	}
+
+	private:
+		std::string m_original_name;
+		std::string m_unique_name;
 	};
 }

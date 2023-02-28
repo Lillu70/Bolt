@@ -12,8 +12,9 @@ layout(location = 0) in vec3 in_offset;
 layout(location = 1) in vec3 in_normal;
 layout(location = 2) in vec2 in_tex_coord;
 
-layout(location = 0) out vec2 out_frag_tex_coord;
 
+layout(location = 0) out vec2 out_frag_tex_coord;
+layout(location = 1) out vec3 out_frag_color;
 
 layout( push_constant ) uniform constants
 {
@@ -33,6 +34,6 @@ void main()
 	vec3 world_position = pc.model_center[0].xyz + camera_right_worldspace * in_offset.x * pc.model_center[1][0] + camera_up_worldspace * in_offset.y * pc.model_center[1][1];
 	
 	out_frag_tex_coord = in_tex_coord;
-
+	out_frag_color = pc.model_center[3].xyz;
 	gl_Position = ub.proj_view * vec4(world_position, 1.0);
 }

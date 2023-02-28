@@ -19,13 +19,13 @@ namespace Bolt
 		Layer() : m_entity_spawner(m_components) {}
 		virtual ~Layer() {};
 
+		void Update(Time time_step);
 		virtual void Initialize() {};
-		virtual void Update(Time time_step) {};
+		virtual void User_Update(Time time_step) {};
+		virtual void User_Renderer_Submit(Render_Submissions& submissions, glm::vec3 camera_position) {};
 
 		void Inject_Render_Submissions();
 		Entity_ID Create_Camera_And_Env_Data_Entity();
-
-		bool m_visualize_transforms = false;
 
 	protected:
 		void Create_Skybox_From_Model(const std::string& model_path, glm::vec3 scale);

@@ -178,7 +178,8 @@ void Bolt::Vk_Renderer::Draw_Render_Pass(Bolt::Pass_Submissions& active_pass, Vk
 
 void Bolt::Vk_Renderer::Draw_Submissions(VkCommandBuffer& cmd_buffer, const Pass_Submissions& submissions)
 {	
-	Draw_Render_Objects(&submissions.models_3D, cmd_buffer);
+	//Draw_Render_Objects(&submissions.models_3D, cmd_buffer);
+	Draw_Model_3D_Map(&submissions.model_map_3D, cmd_buffer);
 	Draw_Render_Objects(&submissions.transparent_models_3D, cmd_buffer);
 	Draw_Render_Objects(&submissions.billboards, cmd_buffer);
 }
@@ -259,11 +260,51 @@ void Bolt::Vk_Renderer::Draw_Render_Objects(const std::vector<Render_Object_Bill
 			vkCmdBindIndexBuffer(cmd_buffer, active_mesh->m_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
 		}
 
-		Push_Constant pc = Create_Push_Constant_Billboard(render_obj.position, render_obj.scale);
+		Push_Constant pc = Create_Push_Constant_Billboard(render_obj.position, render_obj.scale, render_obj.color);
 		vkCmdPushConstants(cmd_buffer, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Bolt::Push_Constant), &pc);
 
 		vkCmdDrawIndexed(cmd_buffer, active_mesh->m_index_count, 1, 0, 0, 0);
 		m_draw_calls++;
+	}
+}
+
+void Bolt::Vk_Renderer::Draw_Model_3D_Map(const Material_Mesh_Map<glm::mat4>* map, VkCommandBuffer& cmd_buffer)
+{
+	for (auto& [active_material, mesh_map] : map->map)
+	{
+		ASSERT(active_material, "Material is a nullptr!");
+		ASSERT(active_material->m_descriptor_set, "Material descriptor set is a nullptr!");
+		ASSERT(active_material->m_material_buffer.handle, "Material buffer is a nullptr!");
+		ASSERT(active_material->m_material_buffer.memory, "Material buffer memory is a nullptr!");
+		ASSERT(active_material->m_pipeline, "Material pipeline is a nullptr!");
+
+		vkCmdBindPipeline(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, active_material->m_pipeline);
+		vkCmdBindDescriptorSets(cmd_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 1, 1, &active_material->m_descriptor_set, 0, nullptr);
+
+		for (auto& [active_mesh, matrix_array] : mesh_map)
+		{
+			ASSERT(active_mesh, "Mesh is a nullptr!");
+			ASSERT(active_mesh->m_vertex_buffer.handle, "Mesh vertex buffer handle is a nullptr!");
+			ASSERT(active_mesh->m_vertex_buffer.memory, "Mesh vertex buffer memory is a nullptr!");
+			ASSERT(active_mesh->m_index_buffer.handle, "Mesh index buffer handle is a nullptr!");
+			ASSERT(active_mesh->m_index_buffer.memory, "Mesh index buffer memory is a nullptr!");
+			ASSERT(active_mesh->m_index_count, "Index buffer count is 0!");
+
+			VkDeviceSize offsets[] = { 0 };
+			vkCmdBindVertexBuffers(cmd_buffer, 0, 1, &active_mesh->m_vertex_buffer.handle, offsets);
+			vkCmdBindIndexBuffer(cmd_buffer, active_mesh->m_index_buffer.handle, 0, VK_INDEX_TYPE_UINT32);
+
+			for (auto& matrix : matrix_array)
+			{
+				Push_Constant pc;
+				pc.model_matrix = matrix;
+				pc.normal_matrix = glm::inverseTranspose(matrix);
+
+				vkCmdPushConstants(cmd_buffer, m_pipeline_layout, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(Bolt::Push_Constant), &pc);
+				vkCmdDrawIndexed(cmd_buffer, active_mesh->m_index_count, 1, 0, 0, 0);
+				m_draw_calls++;
+			}
+		}
 	}
 }
 
@@ -552,8 +593,6 @@ Bolt::Push_Constant Bolt::Vk_Renderer::Create_Push_Constant_3D_Model(const glm::
 	Push_Constant pc;
 
 	pc.model_matrix = model_transform;
-	//pc.model_matrix[0] = glm::vec4(glm::vec3(1), 1);
-	
 	glm::mat3 normal_matrix = glm::mat3(1);
 	normal_matrix = glm::inverseTranspose(model_transform);
 	pc.normal_matrix = normal_matrix;
@@ -562,11 +601,12 @@ Bolt::Push_Constant Bolt::Vk_Renderer::Create_Push_Constant_3D_Model(const glm::
 }
 
 
-Bolt::Push_Constant Bolt::Vk_Renderer::Create_Push_Constant_Billboard(const glm::vec3& position, const glm::vec2& scale)
+Bolt::Push_Constant Bolt::Vk_Renderer::Create_Push_Constant_Billboard(const glm::vec3& position, const glm::vec2& scale, const glm::vec3& color)
 {
 	Push_Constant pc;
 	pc.model_matrix[0] = glm::vec4(position, 1);
 	pc.model_matrix[1] = glm::vec4(scale, 1, 1);
+	pc.model_matrix[3] = glm::vec4(color, 1);
 
 	glm::mat3 normal_matrix = glm::mat3(1);
 	//normal_matrix = glm::inverseTranspose(model_transform);

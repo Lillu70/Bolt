@@ -79,7 +79,7 @@ namespace Bolt
 			m_accum_draw_call_count = 0;
 			m_fps_frame_counter = 0;
 
-			std::string title = m_window_title + " [FPS: " + std::to_string(m_fps) + " | DC/s: " + std::to_string(mean_draw_call_count) + "]";
+			std::string title = m_window_title + " [FPS: " + std::to_string(m_fps) + " | Draws: " + std::to_string(mean_draw_call_count) + "]";
 			glfwSetWindowTitle(m_window, title.c_str());
 		}
 	}

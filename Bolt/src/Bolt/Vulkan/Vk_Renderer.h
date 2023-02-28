@@ -73,9 +73,10 @@ namespace Bolt
 		void Draw_Submissions(VkCommandBuffer& cmd_buffer, const Pass_Submissions& submissions);
 		void Draw_Render_Objects(const std::vector<Render_Object_3D_Model>* render_set, VkCommandBuffer& cmd_buffer);
 		void Draw_Render_Objects(const std::vector<Render_Object_Billboard>* render_set, VkCommandBuffer& cmd_buffer);
+		void Draw_Model_3D_Map(const Material_Mesh_Map<glm::mat4>* map, VkCommandBuffer& cmd_buffer);
 
 		Push_Constant Create_Push_Constant_3D_Model(const glm::mat4& model_transform);
-		Push_Constant Create_Push_Constant_Billboard(const glm::vec3& position, const glm::vec2& scale);
+		Push_Constant Create_Push_Constant_Billboard(const glm::vec3& position, const glm::vec2& scale, const glm::vec3& color);
 
 	private:
 		static VKAPI_ATTR VkBool32 VKAPI_CALL Debug_Callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, VkDebugUtilsMessageTypeFlagsEXT message_type, const VkDebugUtilsMessengerCallbackDataEXT* callback_data_ptr, void* user_data_ptr);

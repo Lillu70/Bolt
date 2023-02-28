@@ -30,5 +30,19 @@ namespace Bolt
 		}
 	};
 
+	class Util
+	{
+	public:
+		Util() = delete;
+
+		template<typename T>
+		static void  Vector_Find_Swap_Top_An_Pop(std::vector<T>& vec, T element)
+		{
+			auto iter = std::find(vec.begin(), vec.end(), element);
+			Bolt::u64 idx = iter - vec.begin();
+			vec[idx] = vec.back();
+			vec.pop_back();
+		}
+	};
 	
 }

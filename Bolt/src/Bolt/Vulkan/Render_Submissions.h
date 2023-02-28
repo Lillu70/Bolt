@@ -17,9 +17,9 @@ namespace Bolt
 		Render_Pass_Info info;
 
 		//[Material][Mesh][Transforms]
-		//std::unordered_map<Material*, std::unordered_map<Mesh*, std::vector<glm::mat4>>> model_map_3D;
+		Material_Mesh_Map<glm::mat4> model_map_3D;
 
-		std::vector<Render_Object_3D_Model> models_3D;
+		//std::vector<Render_Object_3D_Model> models_3D;
 		std::vector<Render_Object_3D_Model> transparent_models_3D;
 		std::vector<Render_Object_Billboard> billboards;
 
@@ -27,11 +27,9 @@ namespace Bolt
 
 		void Clear()
 		{
-			//for (auto& [mat, mat_to_mesh] : model_map_3D)
-			//	for (auto& [mesh, mesh_to_matrix] : mat_to_mesh)
-			//		mesh_to_matrix.clear();
+			model_map_3D.Clear();
 
-			models_3D.clear();
+			//models_3D.clear();
 			transparent_models_3D.clear();
 			billboards.clear();
 		}
@@ -48,7 +46,7 @@ namespace Bolt
 		//Submit calls.
 	public:
 		void Submit_3D_Model(Mesh* mesh, Material* material, const glm::mat4* matrix, f32 sqrd_distance_to_camera);
-		void Submit_Billboard(Mesh* mesh, Material* material, glm::vec3 position, glm::vec2 scale, f32 sqrd_distance_to_camera);
+		void Submit_Billboard(Mesh* mesh, Material* material, glm::vec3 position, glm::vec2 scale, glm::vec3 color, f32 sqrd_distance_to_camera);
 		
 		//Internal list navigation calls.
 	public:

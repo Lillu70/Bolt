@@ -12,12 +12,12 @@ void Bolt::Render_Submissions::Submit_3D_Model(Mesh* mesh, Material* material, c
 	if (material->Has_Transparensy())
 		Active_Pass().transparent_models_3D.emplace_back(mesh, material, matrix, sqrd_distance_to_camera);
 	else
-		Active_Pass().models_3D.emplace_back(mesh, material, matrix);
+		Active_Pass().model_map_3D[material][mesh].emplace_back(*matrix);
 }
 
-void Bolt::Render_Submissions::Submit_Billboard(Mesh* mesh, Material* material, glm::vec3 position, glm::vec2 scale, f32 sqrd_distance_to_camera)
+void Bolt::Render_Submissions::Submit_Billboard(Mesh* mesh, Material* material, glm::vec3 position, glm::vec2 scale, glm::vec3 color, f32 sqrd_distance_to_camera)
 {
-	Active_Pass().billboards.emplace_back(mesh, material, position, scale, sqrd_distance_to_camera);
+	Active_Pass().billboards.emplace_back(mesh, material, position, scale, color, sqrd_distance_to_camera);
 }
 
 bool Bolt::Render_Submissions::Activate_Next_Pass()
