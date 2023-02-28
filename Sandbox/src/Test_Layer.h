@@ -13,9 +13,6 @@ public:
 	bool Get_KP_Directional_Input(glm::vec3& direction);
 
 private:
-	void Extract_Selected_Transforms_From_Hierarhy(const std::vector<Bolt::Transform*>& selected_child_hierarchy, Bolt::Transform* selected_transform, std::vector<Bolt::Transform*>& hierarchy);
-
-private:
 	Bolt::Entity player;
 	Bolt::Entity camera;
 

@@ -104,14 +104,13 @@ void Test_Layer::User_Renderer_Submit(Bolt::Render_Submissions& submissions, glm
 	std::vector<Bolt::Transform*> all_transforms = ECS().Components<Bolt::Transform>();
 	Bolt::Transform& seleceted_transform = m_selected_entity.Get<Bolt::Transform>();
 
-	
+	//Remove selected and it's child nodes from "all_transfroms" so they can be rendererd differently.
 	Bolt::Util::Vector_Find_Swap_Top_An_Pop(all_transforms, &seleceted_transform);
-
 	std::vector<Bolt::Transform*> selected_children = seleceted_transform.Build_Downwards_Hierarchy();
-
 	for (Bolt::Transform* child : selected_children)
 		Bolt::Util::Vector_Find_Swap_Top_An_Pop(all_transforms, child);
 	
+
 	//Draw selected transform.
 	submissions.Submit_Billboard(mesh, material, seleceted_transform.Position(), 
 		glm::vec3(0.2f), glm::vec3(0.1, 8, 0.1), Bolt::Maths::Distance_Squered(camera_position, seleceted_transform.Position()));
@@ -220,10 +219,4 @@ bool Test_Layer::Get_KP_Directional_Input(glm::vec3& direction)
 		direction = glm::vec3(0, 0, -1);
 
 	return direction != glm::vec3(0);
-}
-
-void Test_Layer::Extract_Selected_Transforms_From_Hierarhy(const std::vector<Bolt::Transform*>& selected_child_hierarchy, Bolt::Transform* selected_transform, std::vector<Bolt::Transform*>& hierarchy)
-{
-	//Discard the selected entity
-	
 }
